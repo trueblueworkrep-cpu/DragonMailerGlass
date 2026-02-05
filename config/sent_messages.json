@@ -1,0 +1,20 @@
+{
+  "messages": [
+    {
+      "type": "email",
+      "subject": "Your Order Has Been Shipped!",
+      "recipients": 2,
+      "success": 2,
+      "failed": 0,
+      "timestamp": "2026-02-05T14:44:12.651256"
+    },
+    {
+      "type": "email",
+      "subject": "Your One-Time Password",
+      "recipients": 2,
+      "success": 2,
+      "failed": 0,
+      "timestamp": "2026-02-05T15:15:43.654765"
+    }
+  ]
+}

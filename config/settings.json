@@ -1,0 +1,7 @@
+{
+  "theme": "Glass",
+  "login_enabled": true,
+  "password_hash": "",
+  "multi_user_enabled": true,
+  "session_timeout": 3600
+}
