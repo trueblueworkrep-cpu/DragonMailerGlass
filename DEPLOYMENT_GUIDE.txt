@@ -1,0 +1,159 @@
+============================================================
+   DRAGON MAILER - DEPLOYMENT GUIDE
+   Domain: dragon-mailer.com
+   Server: 66.113.136.229
+   Portal: portal.cloudsolutions.siteprotect.com
+============================================================
+
+STEP 1: CONNECT TO YOUR SERVER
+==============================
+SSH into your server:
+    ssh root@66.113.136.229
+
+Or use the hosting portal at portal.cloudsolutions.siteprotect.com
+
+
+STEP 2: UPDATE SERVER & INSTALL DEPENDENCIES
+============================================
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y python3 python3-pip python3-venv nginx git certbot python3-certbot-nginx
+
+
+STEP 3: CREATE APPLICATION DIRECTORY
+====================================
+sudo mkdir -p /var/www/dragonmailer
+cd /var/www/dragonmailer
+
+
+STEP 4: CLONE THE REPOSITORY
+============================
+sudo git clone https://github.com/trueblueworkrep-cpu/DragonMailerGlass.git .
+
+Or upload files via SFTP/SCP to /var/www/dragonmailer
+
+
+STEP 5: SET UP PYTHON VIRTUAL ENVIRONMENT
+=========================================
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+
+
+STEP 6: SET PERMISSIONS
+=======================
+sudo chown -R www-data:www-data /var/www/dragonmailer
+sudo chmod -R 755 /var/www/dragonmailer
+
+
+STEP 7: INSTALL SYSTEMD SERVICE
+===============================
+sudo cp dragonmailer.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable dragonmailer
+sudo systemctl start dragonmailer
+
+Check status:
+    sudo systemctl status dragonmailer
+
+
+STEP 8: CONFIGURE NGINX
+=======================
+sudo cp nginx_dragon_mailer.conf /etc/nginx/sites-available/dragon-mailer.conf
+sudo ln -s /etc/nginx/sites-available/dragon-mailer.conf /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+
+
+STEP 9: CONFIGURE DNS (At Your Domain Registrar)
+================================================
+Login to your domain registrar and set:
+
+Type    Name    Value               TTL
+----    ----    -----               ---
+A       @       66.113.136.229      300
+A       www     66.113.136.229      300
+
+
+STEP 10: INSTALL SSL CERTIFICATE (HTTPS)
+========================================
+sudo certbot --nginx -d dragon-mailer.com -d www.dragon-mailer.com
+
+After SSL is installed, edit /etc/nginx/sites-available/dragon-mailer.conf:
+- Uncomment the HTTPS server block
+- Uncomment the HTTP redirect line
+- Reload nginx: sudo systemctl reload nginx
+
+
+============================================================
+   USEFUL COMMANDS
+============================================================
+
+View app logs:
+    sudo journalctl -u dragonmailer -f
+
+Restart the application:
+    sudo systemctl restart dragonmailer
+
+Stop the application:
+    sudo systemctl stop dragonmailer
+
+Restart nginx:
+    sudo systemctl restart nginx
+
+Check nginx config:
+    sudo nginx -t
+
+Update the application:
+    cd /var/www/dragonmailer
+    sudo git pull
+    source venv/bin/activate
+    pip install -r requirements.txt
+    sudo systemctl restart dragonmailer
+
+
+============================================================
+   TROUBLESHOOTING
+============================================================
+
+1. App not starting?
+   - Check logs: sudo journalctl -u dragonmailer -f
+   - Verify Python venv: /var/www/dragonmailer/venv/bin/python --version
+   - Test manually: cd /var/www/dragonmailer && source venv/bin/activate && streamlit run app.py
+
+2. Cannot reach website?
+   - Check if nginx is running: sudo systemctl status nginx
+   - Check firewall: sudo ufw allow 80 && sudo ufw allow 443
+   - Check DNS propagation: nslookup dragon-mailer.com
+
+3. WebSocket connection issues?
+   - Nginx config includes WebSocket support for /_stcore/stream
+   - Make sure proxy_read_timeout is set to 86400
+
+4. Permission denied?
+   - Reset permissions: sudo chown -R www-data:www-data /var/www/dragonmailer
+
+
+============================================================
+   FIREWALL CONFIGURATION
+============================================================
+
+If using UFW firewall:
+    sudo ufw allow 'Nginx Full'
+    sudo ufw allow 22
+    sudo ufw enable
+
+
+============================================================
+   YOUR SETUP SUMMARY
+============================================================
+
+Domain:     dragon-mailer.com
+Server IP:  66.113.136.229
+Portal:     portal.cloudsolutions.siteprotect.com
+App Port:   8501 (internal)
+Web Port:   80 (HTTP) / 443 (HTTPS)
+App Path:   /var/www/dragonmailer
+Service:    dragonmailer.service
+
+============================================================
