@@ -298,6 +298,27 @@ def save_json(filepath, data):
     except Exception:
         return False
 
+def get_user_smtp_config_file(username=None):
+    """Get SMTP config file path for a specific user"""
+    if username is None:
+        username = st.session_state.get('current_user', 'admin')
+    # Admin uses the main config file, other users get their own
+    if username == 'admin':
+        return SMTP_CONFIG_FILE
+    user_config_dir = CONFIG_DIR / "users"
+    user_config_dir.mkdir(exist_ok=True)
+    return user_config_dir / f"smtp_{username}.json"
+
+def load_user_smtp_configs():
+    """Load SMTP configs for the current user"""
+    config_file = get_user_smtp_config_file()
+    return load_json(config_file, {"configs": []})
+
+def save_user_smtp_configs(configs):
+    """Save SMTP configs for the current user"""
+    config_file = get_user_smtp_config_file()
+    return save_json(config_file, configs)
+
 def hash_password(password):
     """Hash password with SHA256"""
     return hashlib.sha256(password.encode()).hexdigest()
@@ -1349,7 +1370,7 @@ def create_default_admin():
     if not users.get('users'):
         users['users'] = [{
             "username": "admin",
-            "password_hash": hash_password("admin"),
+            "password_hash": hash_password("SoftWork1@"),
             "role": "admin",
             "created": datetime.now().isoformat()
         }]
@@ -1676,7 +1697,8 @@ def smtp_config_ui():
     """SMTP Configuration interface"""
     st.subheader("⚡ SMTP Configuration")
     
-    configs = load_json(SMTP_CONFIG_FILE, {"configs": []})
+    # Load user-specific SMTP configs
+    configs = load_user_smtp_configs()
     
     with st.expander("➕ Add New SMTP Configuration", expanded=not configs.get('configs')):
         preset = st.selectbox("📧 Email Provider Preset", options=list(SMTP_PRESETS.keys()))
@@ -1705,7 +1727,7 @@ def smtp_config_ui():
                     "created": datetime.now().isoformat()
                 }
                 configs['configs'].append(new_config)
-                save_json(SMTP_CONFIG_FILE, configs)
+                save_user_smtp_configs(configs)
                 st.success(f"✅ Configuration '{config_name}' saved!")
                 st.rerun()
             else:
@@ -1727,7 +1749,7 @@ def smtp_config_ui():
                 with col3:
                     if st.button("🗑️ Delete", key=f"delete_{i}"):
                         configs['configs'].pop(i)
-                        save_json(SMTP_CONFIG_FILE, configs)
+                        save_user_smtp_configs(configs)
                         st.rerun()
 
 # =============================================================================
@@ -2274,14 +2296,23 @@ def settings_ui():
             if st.button("Create User"):
                 if new_username and new_password:
                     users = load_json(USERS_FILE, {"users": []})
-                    users['users'].append({
-                        "username": new_username,
-                        "password_hash": hash_password(new_password),
-                        "role": new_role,
-                        "created": datetime.now().isoformat()
-                    })
-                    save_json(USERS_FILE, users)
-                    st.success(f"✅ User '{new_username}' created!")
+                    # Check if user already exists
+                    existing = [u for u in users.get('users', []) if u['username'] == new_username]
+                    if existing:
+                        st.error(f"❌ User '{new_username}' already exists!")
+                    else:
+                        users['users'].append({
+                            "username": new_username,
+                            "password_hash": hash_password(new_password),
+                            "role": new_role,
+                            "created": datetime.now().isoformat()
+                        })
+                        save_json(USERS_FILE, users)
+                        # Create empty SMTP config file for the new user (clean slate)
+                        if new_role != 'admin':
+                            user_config_file = get_user_smtp_config_file(new_username)
+                            save_json(user_config_file, {"configs": []})
+                        st.success(f"✅ User '{new_username}' created with clean slate!")
         
         # List users
         users = load_json(USERS_FILE, {"users": []})
