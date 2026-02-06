@@ -1,1 +1,9 @@
+# Dragon Mailer v2.0 - Glass Edition
+# Core Dependencies
+
 streamlit>=1.28.0
+
+# All other imports are Python standard library:
+# - smtplib, json, os, hashlib, random, string, uuid
+# - re, time, threading, datetime, pathlib
+# - email.mime (MIMEText, MIMEMultipart, MIMEBase)
