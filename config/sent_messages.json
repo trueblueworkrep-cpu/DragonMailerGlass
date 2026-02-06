@@ -15,6 +15,14 @@
       "success": 2,
       "failed": 0,
       "timestamp": "2026-02-05T15:15:43.654765"
+    },
+    {
+      "type": "email",
+      "subject": "Your One-Time Password",
+      "recipients": 2,
+      "success": 2,
+      "failed": 0,
+      "timestamp": "2026-02-05T15:18:51.960151"
     }
   ]
 }

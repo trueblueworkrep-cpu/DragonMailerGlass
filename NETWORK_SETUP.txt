@@ -1,0 +1,39 @@
+============================================================
+   DRAGON MAILER - NETWORK SETUP GUIDE
+============================================================
+
+SECOND LAPTOP ACCESS (SAME NETWORK)
+-----------------------------------
+
+OPTION 1: Access from any device on your network
+------------------------------------------------
+1. Run DragonMailer.bat on the main computer
+2. Note the "NETWORK ACCESS" URL shown (e.g., http://192.168.27.235:8505)
+3. On second laptop, open browser and go to that URL
+
+   Main PC runs the app → Second laptop accesses via browser
+
+
+OPTION 2: Run locally on second laptop
+--------------------------------------
+1. Copy this entire folder to the second laptop
+2. Double-click "Install.bat" to set up
+3. Double-click "Dragon Mailer" shortcut on desktop
+
+   Requires: Python 3.10+ installed on the second laptop
+
+
+FIREWALL NOTE
+-------------
+If second laptop can't connect, you may need to allow the port:
+- Run "Allow_Firewall.bat" as Administrator on the main PC
+- Or manually allow port 8505 in Windows Firewall
+
+
+TROUBLESHOOTING
+---------------
+- Make sure both laptops are on the same WiFi/network
+- Check the IP address shown when you start DragonMailer.bat
+- Try pinging the main PC IP from the second laptop
+
+============================================================
