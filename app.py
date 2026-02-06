@@ -1811,6 +1811,12 @@ def smtp_config_ui():
     # Load user-specific SMTP configs
     configs = load_user_smtp_configs()
     
+    # Ensure configs has the right structure
+    if configs is None:
+        configs = {"configs": []}
+    if 'configs' not in configs:
+        configs['configs'] = []
+    
     with st.expander("➕ Add New SMTP Configuration", expanded=not configs.get('configs')):
         preset = st.selectbox("📧 Email Provider Preset", options=list(SMTP_PRESETS.keys()))
         preset_config = SMTP_PRESETS[preset]
