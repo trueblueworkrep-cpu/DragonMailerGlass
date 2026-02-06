@@ -1192,6 +1192,56 @@ def inject_neumorphic_glass_css(background_url, theme):
         box-shadow: 0 0 5px rgba(0, 212, 255, 0.3) !important;
     }}
     
+    /* ============================================== */
+    /* FILE UPLOADER - VISIBLE BUTTON                */
+    /* ============================================== */
+    
+    /* File uploader container */
+    .stFileUploader {{
+        background: rgba(20, 25, 45, 0.8) !important;
+        border: 1px dashed rgba(0, 180, 255, 0.4) !important;
+        border-radius: 8px !important;
+        padding: 10px !important;
+    }}
+    
+    /* File uploader button - CYAN/BLUE for visibility */
+    .stFileUploader button,
+    [data-testid="stFileUploader"] button,
+    [data-testid="baseButton-secondary"] {{
+        background: linear-gradient(135deg, #0088ff, #00d4ff) !important;
+        color: #ffffff !important;
+        border: none !important;
+        padding: 10px 20px !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+    }}
+    
+    /* File uploader button hover */
+    .stFileUploader button:hover,
+    [data-testid="stFileUploader"] button:hover {{
+        background: linear-gradient(135deg, #00d4ff, #0088ff) !important;
+        transform: scale(1.02) !important;
+    }}
+    
+    /* File uploader text */
+    .stFileUploader label,
+    .stFileUploader span,
+    [data-testid="stFileUploader"] span {{
+        color: #ffffff !important;
+    }}
+    
+    /* Browse files text */
+    [data-testid="stFileUploader"] section {{
+        background: rgba(20, 25, 45, 0.9) !important;
+        border: 1px dashed rgba(0, 180, 255, 0.4) !important;
+        border-radius: 8px !important;
+    }}
+    
+    /* "Drag and drop" text */
+    [data-testid="stFileUploader"] section small {{
+        color: rgba(255, 255, 255, 0.7) !important;
+    }}
+    
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
@@ -2175,23 +2225,43 @@ def sms_composer_ui():
         
         recipients = [{"phone": phone, "carrier": carrier}] if phone else []
     else:
-        st.write("Enter phone numbers with carrier (format: `phone,carrier` one per line)")
-        st.caption("Use `Auto` as carrier to auto-detect: `1234567890,Auto`")
+        st.markdown("""
+        **📋 Bulk SMS Options:**
+        - Enter numbers manually below, OR
+        - Upload a .txt or .csv file with format: `phone,carrier`
+        - Use `Auto` as carrier to auto-detect
+        """)
+        
+        # File upload for bulk numbers
+        uploaded_file = st.file_uploader("📁 Upload Numbers (txt/csv)", type=['txt', 'csv'], key="bulk_sms_file")
+        
+        recipients_text = ""
+        if uploaded_file:
+            file_content = uploaded_file.read().decode('utf-8')
+            recipients_text = file_content
+            st.success(f"✅ Loaded {len(file_content.splitlines())} lines from file")
+        
         recipients_text = st.text_area(
-            "📞 Recipients",
+            "📞 Recipients (phone,carrier per line)",
+            value=recipients_text,
             placeholder="1234567890,Verizon\n0987654321,T-Mobile\n5551234567,Auto",
-            height=150
+            height=150,
+            help="Format: phone,carrier - Use 'Auto' to auto-detect carrier"
         )
         recipients = []
         for line in recipients_text.split('\n'):
+            line = line.strip()
             if ',' in line:
-                parts = line.strip().split(',')
+                parts = line.split(',')
                 if len(parts) >= 2:
                     carrier_input = parts[1].strip()
                     # Map "Auto" to the SMS_GATEWAYS key
                     if carrier_input.lower() == "auto":
                         carrier_input = "Auto (Try All)"
                     recipients.append({"phone": parts[0].strip(), "carrier": carrier_input})
+            elif line and line.replace('-', '').replace(' ', '').isdigit():
+                # Just a phone number without carrier - use Auto
+                recipients.append({"phone": line.replace('-', '').replace(' ', ''), "carrier": "Auto (Try All)"})
         
         if recipients:
             st.info(f"📊 {len(recipients)} recipients detected")
