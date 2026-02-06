@@ -2043,6 +2043,25 @@ def email_composer_ui():
             file.seek(0)
         st.info(f"📎 {len(attachments)} file(s) attached")
     
+    # Email Tracking Options (HTML only)
+    enable_tracking = False
+    tracking_service = None
+    custom_tracking_url = ""
+    if is_html:
+        with st.expander("📊 Email Tracking Options"):
+            enable_tracking = st.checkbox("Enable Open Tracking", value=False, 
+                                          help="Add invisible tracking pixel to detect when email is opened")
+            if enable_tracking:
+                tracking_service = st.selectbox("Tracking Service", 
+                    ["None (Local logging only)", "Custom URL"],
+                    help="Choose how to track email opens")
+                if tracking_service == "Custom URL":
+                    custom_tracking_url = st.text_input("Custom Tracking URL", 
+                        placeholder="https://yourserver.com/track?id={uuid}",
+                        help="Use {uuid} for unique tracking ID")
+                st.info("📌 Tracking works by embedding a tiny 1x1 pixel image. When recipient opens email, the image loads and records the open event.")
+                st.warning("⚠️ Note: Some email clients block tracking pixels. Accuracy is ~40-60%.")
+    
     # Send button
     col1, col2 = st.columns(2)
     with col1:
@@ -2075,6 +2094,24 @@ def email_composer_ui():
                 # Apply patterns to subject and body
                 final_subject = apply_patterns(subject, custom_link)
                 final_body = apply_patterns(body, custom_link)
+                
+                # Add tracking pixel if enabled (HTML only)
+                tracking_id = None
+                if enable_tracking and is_html:
+                    import uuid as uuid_module
+                    tracking_id = str(uuid_module.uuid4())[:8]
+                    if tracking_service == "Custom URL" and custom_tracking_url:
+                        pixel_url = custom_tracking_url.replace("{uuid}", tracking_id)
+                    else:
+                        # Local logging - use a placeholder that won't load but logs intent
+                        pixel_url = f"https://tracking.local/open?id={tracking_id}"
+                    tracking_pixel = f'<img src="{pixel_url}" width="1" height="1" style="display:none" alt="" />'
+                    # Add pixel at end of body
+                    if "</body>" in final_body.lower():
+                        final_body = final_body.replace("</body>", f"{tracking_pixel}</body>")
+                        final_body = final_body.replace("</BODY>", f"{tracking_pixel}</BODY>")
+                    else:
+                        final_body += tracking_pixel
                 
                 if len(recipients) == 1:
                     result = send_email(
@@ -2138,6 +2175,8 @@ def email_composer_ui():
                         "recipients": len(recipients),
                         "recipient_list": recipients if len(recipients) <= 10 else recipients[:10],
                         "attachments": [a['name'] for a in attachment_data] if attachment_data else [],
+                        "tracking_enabled": enable_tracking,
+                        "tracking_id": tracking_id if enable_tracking else None,
                         "success": results['success'],
                         "failed": results['failed'],
                         "timestamp": datetime.now().isoformat()
