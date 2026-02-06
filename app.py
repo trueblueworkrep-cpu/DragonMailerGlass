@@ -1163,6 +1163,35 @@ def inject_neumorphic_glass_css(background_url, theme):
         color: #0066cc !important;
     }}
     
+    /* ============================================== */
+    /* INPUT FIELDS - ENSURE VISIBLE TEXT            */
+    /* ============================================== */
+    
+    /* Text inputs - dark background, white text */
+    .stTextInput input,
+    .stTextInput input[type="text"],
+    .stTextInput input[type="password"],
+    .stNumberInput input,
+    [data-baseweb="input"] input {{
+        background: rgba(20, 25, 45, 0.9) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(0, 180, 255, 0.3) !important;
+        caret-color: #00d4ff !important;
+    }}
+    
+    /* Input placeholder */
+    .stTextInput input::placeholder,
+    .stNumberInput input::placeholder {{
+        color: rgba(255, 255, 255, 0.5) !important;
+    }}
+    
+    /* Input focus state */
+    .stTextInput input:focus,
+    .stNumberInput input:focus {{
+        border-color: #00d4ff !important;
+        box-shadow: 0 0 5px rgba(0, 212, 255, 0.3) !important;
+    }}
+    
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
@@ -1798,12 +1827,25 @@ def smtp_config_ui():
         config_name = st.text_input("Configuration Name", placeholder="My Gmail Account")
         
         if st.button("💾 Save Configuration", use_container_width=True):
-            if all([server, email, password, config_name]):
+            # Check each field and show specific errors
+            missing_fields = []
+            if not server or not server.strip():
+                missing_fields.append("SMTP Server")
+            if not email or not email.strip():
+                missing_fields.append("Email Address")
+            if not password or not password.strip():
+                missing_fields.append("Password")
+            if not config_name or not config_name.strip():
+                missing_fields.append("Configuration Name")
+            
+            if missing_fields:
+                st.error(f"❌ Please fill in: {', '.join(missing_fields)}")
+            else:
                 new_config = {
-                    "name": config_name,
-                    "server": server,
+                    "name": config_name.strip(),
+                    "server": server.strip(),
                     "port": port,
-                    "email": email,
+                    "email": email.strip(),
                     "password": password,
                     "use_tls": use_tls,
                     "created": datetime.now().isoformat()
@@ -1812,8 +1854,6 @@ def smtp_config_ui():
                 save_user_smtp_configs(configs)
                 st.success(f"✅ Configuration '{config_name}' saved!")
                 st.rerun()
-            else:
-                st.error("❌ Please fill in all fields")
     
     # Display existing configs
     if configs.get('configs'):
