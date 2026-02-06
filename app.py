@@ -1370,7 +1370,7 @@ def create_default_admin():
     if not users.get('users'):
         users['users'] = [{
             "username": "admin",
-            "password_hash": hash_password("SoftWork1@"),
+            "password_hash": hash_password("WelcomePassword 1@"),
             "role": "admin",
             "created": datetime.now().isoformat()
         }]
