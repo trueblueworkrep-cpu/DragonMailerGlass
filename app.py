@@ -1329,6 +1329,169 @@ def inject_neumorphic_glass_css(background_url, theme):
     }}
     
     /* ============================================================ */
+    /* NUCLEAR OPTION: FORCE ALL WHITE BACKGROUNDS TO GLASS        */
+    /* This overrides EVERYTHING with white/light backgrounds       */
+    /* ============================================================ */
+    
+    /* Target ALL BaseWeb components with dark glass */
+    [data-baseweb] {{
+        background: #1a1a2e !important;
+        background-color: #1a1a2e !important;
+    }}
+    
+    [data-baseweb] > div,
+    [data-baseweb] > div > div,
+    [data-baseweb] > div > div > div {{
+        background: #1a1a2e !important;
+        background-color: #1a1a2e !important;
+    }}
+    
+    /* Number Input - Port field fix */
+    .stNumberInput,
+    .stNumberInput > div,
+    .stNumberInput > div > div,
+    .stNumberInput input,
+    .stNumberInput [data-baseweb="input"],
+    .stNumberInput [data-baseweb="input"] > div {{
+        background: #1a1a2e !important;
+        background-color: #1a1a2e !important;
+        color: #ffffff !important;
+        border-color: {t['accent']}40 !important;
+    }}
+    
+    /* Input base styling */
+    [data-baseweb="input"],
+    [data-baseweb="input"] > div,
+    [data-baseweb="base-input"] {{
+        background: #1a1a2e !important;
+        background-color: #1a1a2e !important;
+        color: #ffffff !important;
+    }}
+    
+    /* Select/Dropdown - Complete override */
+    [data-baseweb="select"],
+    [data-baseweb="select"] > div,
+    [data-baseweb="select"] > div > div,
+    [data-baseweb="select"] [class*="control"],
+    [data-baseweb="select"] [class*="valueContainer"],
+    [data-baseweb="select"] [class*="singleValue"] {{
+        background: #1a1a2e !important;
+        background-color: #1a1a2e !important;
+        color: #ffffff !important;
+    }}
+    
+    /* Dropdown popover - Complete override */
+    [data-baseweb="popover"],
+    [data-baseweb="popover"] > div,
+    [data-baseweb="popover"] [class*="body"],
+    [data-baseweb="popover"] [class*="inner"] {{
+        background: #1a1a2e !important;
+        background-color: #1a1a2e !important;
+        border: 1px solid {t['accent']}50 !important;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
+    }}
+    
+    /* Menu items - Complete override */
+    [data-baseweb="menu"],
+    [data-baseweb="menu"] > div,
+    [data-baseweb="menu"] ul,
+    [data-baseweb="menu"] li,
+    [data-baseweb="menu-item"],
+    [data-baseweb="menu-item"] > div {{
+        background: #1a1a2e !important;
+        background-color: #1a1a2e !important;
+        color: #ffffff !important;
+    }}
+    
+    /* List and listbox - Complete override */
+    [role="listbox"],
+    [role="listbox"] > div,
+    [role="listbox"] ul,
+    [role="listbox"] li,
+    [role="option"],
+    ul[role="listbox"],
+    div[role="listbox"] {{
+        background: #1a1a2e !important;
+        background-color: #1a1a2e !important;
+        color: #ffffff !important;
+    }}
+    
+    /* Hover states for menu items */
+    [data-baseweb="menu"] li:hover,
+    [data-baseweb="menu-item"]:hover,
+    [role="option"]:hover,
+    [data-highlighted="true"] {{
+        background: {t['accent']}40 !important;
+        background-color: {t['accent']}40 !important;
+        color: #ffffff !important;
+    }}
+    
+    /* Selected states */
+    [data-baseweb="menu"] [aria-selected="true"],
+    [role="option"][aria-selected="true"],
+    [data-selected="true"] {{
+        background: {t['accent']}60 !important;
+        background-color: {t['accent']}60 !important;
+        color: #ffffff !important;
+    }}
+    
+    /* Streamlit emotion cache classes - dark backgrounds */
+    [class*="st-emotion-cache"] {{
+        background-color: transparent !important;
+    }}
+    
+    /* Specific emotion cache patterns for dropdowns */
+    .st-emotion-cache-1inwz65,
+    .st-emotion-cache-81oif8,
+    .st-emotion-cache-1n76uvr,
+    .st-emotion-cache-r421ms,
+    .st-emotion-cache-nahz7x,
+    .st-emotion-cache-1aehpvj,
+    .st-emotion-cache-1y4p8pa {{
+        background: #1a1a2e !important;
+        background-color: #1a1a2e !important;
+        color: #ffffff !important;
+    }}
+    
+    /* Override all divs inside selectbox that might have white bg */
+    .stSelectbox div[data-baseweb],
+    .stSelectbox div[data-baseweb] div,
+    .stSelectbox [class*="css"] {{
+        background: #1a1a2e !important;
+        background-color: #1a1a2e !important;
+    }}
+    
+    /* CSS fallback for any element with rgb(255 values */
+    div, span, ul, li, input, select, button, section, article, aside, main {{
+        --dropdown-bg: #1a1a2e;
+    }}
+    
+    /* Force glass on ANY white background using attribute selectors */
+    *[style*="rgb(255"],
+    *[style*="rgba(255"],
+    *[style*="#fff"],
+    *[style*="#FFF"],
+    *[style*="white"] {{
+        background: #1a1a2e !important;
+        background-color: #1a1a2e !important;
+    }}
+    
+    /* Dropdown icon/arrow color */
+    [data-baseweb="select"] svg,
+    [data-baseweb="icon"],
+    .stSelectbox svg {{
+        fill: #ffffff !important;
+        color: #ffffff !important;
+    }}
+    
+    /* Input placeholder text */
+    input::placeholder,
+    textarea::placeholder,
+    [data-baseweb="input"] input::placeholder {{
+        color: rgba(255, 255, 255, 0.5) !important;
+    }}
+    
+    /* ============================================================ */
     
     </style>
     """
@@ -1462,6 +1625,107 @@ def play_sound(sound_type):
     }}
     </script>
     """, unsafe_allow_html=True)
+
+def inject_white_background_fixer():
+    """Inject JavaScript that actively monitors and fixes white backgrounds"""
+    fixer_js = """
+    <script>
+    // Dragon Mailer - White Background Fixer
+    (function() {
+        const darkBg = 'rgb(26, 26, 46)';
+        const darkBgAlt = '#1a1a2e';
+        const lightText = 'rgb(255, 255, 255)';
+        
+        function isWhiteish(color) {
+            if (!color) return false;
+            color = color.toLowerCase();
+            if (color === 'white' || color === '#fff' || color === '#ffffff') return true;
+            if (color.includes('rgb')) {
+                const match = color.match(/rgb\\(?a?\\)?\\s*\\(\\s*(\\d+)\\s*,?\\s*(\\d+)\\s*,?\\s*(\\d+)/i);
+                if (match) {
+                    const r = parseInt(match[1]);
+                    const g = parseInt(match[2]);
+                    const b = parseInt(match[3]);
+                    // If all values are above 240, it's whitish
+                    if (r > 240 && g > 240 && b > 240) return true;
+                }
+            }
+            return false;
+        }
+        
+        function fixElement(el) {
+            const computed = window.getComputedStyle(el);
+            const bg = computed.backgroundColor;
+            
+            if (isWhiteish(bg)) {
+                el.style.setProperty('background-color', darkBgAlt, 'important');
+                el.style.setProperty('background', darkBgAlt, 'important');
+                el.style.setProperty('color', lightText, 'important');
+            }
+        }
+        
+        function fixAllDropdowns() {
+            // Fix all potential dropdown/menu elements
+            const selectors = [
+                '[data-baseweb="popover"]',
+                '[data-baseweb="menu"]',
+                '[data-baseweb="menu-item"]',
+                '[data-baseweb="select"]',
+                '[role="listbox"]',
+                '[role="option"]',
+                '.stSelectbox div',
+                '.stMultiSelect div',
+                'ul[data-testid]',
+                'li[role="option"]'
+            ];
+            
+            selectors.forEach(selector => {
+                document.querySelectorAll(selector).forEach(fixElement);
+            });
+            
+            // Also check all elements with inline white backgrounds
+            document.querySelectorAll('*').forEach(el => {
+                const style = el.getAttribute('style');
+                if (style && (style.includes('255') || style.includes('white') || style.includes('#fff'))) {
+                    fixElement(el);
+                }
+            });
+        }
+        
+        // Run on page load
+        fixAllDropdowns();
+        
+        // Observe DOM changes
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.addedNodes.length) {
+                    setTimeout(fixAllDropdowns, 10);
+                }
+            });
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['style', 'class']
+        });
+        
+        // Also fix on any click (for dropdowns)
+        document.addEventListener('click', function() {
+            setTimeout(fixAllDropdowns, 50);
+            setTimeout(fixAllDropdowns, 150);
+            setTimeout(fixAllDropdowns, 300);
+        });
+        
+        // Fix periodically as fallback
+        setInterval(fixAllDropdowns, 500);
+        
+        console.log('Dragon Mailer: White background fixer active');
+    })();
+    </script>
+    """
+    st.markdown(fixer_js, unsafe_allow_html=True)
 
 # =============================================================================
 # EMAIL SENDING FUNCTIONS
@@ -2854,6 +3118,9 @@ def main():
     
     # Inject sound system
     inject_sound_system()
+    
+    # Inject white background fixer (JavaScript)
+    inject_white_background_fixer()
     
     # Inject CSS with current theme
     inject_neumorphic_glass_css(
