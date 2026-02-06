@@ -10,7 +10,9 @@ echo       DRAGON MAILER - FOLDER UNLOCK
 echo  ====================================================
 echo.
 
-set /p "pass=  Enter password: "
+:: Use PowerShell to mask password input
+for /f "delims=" %%p in ('powershell -Command "$p = Read-Host '  Enter password' -AsSecureString; [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($p))"') do set "pass=%%p"
+
 if "!pass!"=="SoftWork1@" (
     echo.
     echo  [OK] Password accepted!
