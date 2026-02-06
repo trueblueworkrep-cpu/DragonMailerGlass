@@ -3042,100 +3042,84 @@ def main():
         else:
             st.warning("⚠️ Add logo: images/dragon_logo.png")
     
-    # Glass Navigation Cards
+    # Initialize navigation state
+    if 'nav_page' not in st.session_state:
+        st.session_state.nav_page = "Dashboard"
+    
+    # Glass Navigation Cards CSS
     st.markdown("""
     <style>
-    .glass-nav-container {
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 15px;
-        padding: 20px 10px;
-        margin-bottom: 20px;
+    /* Hide default button styling for glass nav */
+    div[data-testid="stHorizontalBlock"] .glass-btn-wrapper button {
+        background: rgba(255, 255, 255, 0.08) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border-radius: 16px !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        padding: 20px 15px !important;
+        min-height: 90px !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
     }
-    .glass-nav-card {
-        background: rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        padding: 15px 25px;
-        text-align: center;
-        min-width: 90px;
-        transition: all 0.3s ease;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    div[data-testid="stHorizontalBlock"] .glass-btn-wrapper button:hover {
+        background: rgba(255, 255, 255, 0.15) !important;
+        transform: translateY(-3px) !important;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+        border-color: rgba(255, 255, 255, 0.25) !important;
     }
-    .glass-nav-card:hover {
-        background: rgba(255, 255, 255, 0.15);
-        transform: translateY(-3px);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    div[data-testid="stHorizontalBlock"] .glass-btn-wrapper button[data-active="true"],
+    div[data-testid="stHorizontalBlock"] .glass-btn-wrapper button:focus {
+        background: rgba(59, 130, 246, 0.3) !important;
+        border-color: rgba(59, 130, 246, 0.5) !important;
+        box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3) !important;
     }
-    .glass-nav-icon {
-        font-size: 28px;
-        display: block;
-        margin-bottom: 6px;
-    }
-    .glass-nav-label {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 12px;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+    div[data-testid="stHorizontalBlock"] .glass-btn-wrapper button p {
+        color: white !important;
+        font-size: 14px !important;
+        margin: 0 !important;
     }
     </style>
-    <div class="glass-nav-container">
-        <div class="glass-nav-card">
-            <span class="glass-nav-icon">📧</span>
-            <span class="glass-nav-label">Email</span>
-        </div>
-        <div class="glass-nav-card">
-            <span class="glass-nav-icon">📱</span>
-            <span class="glass-nav-label">SMS</span>
-        </div>
-        <div class="glass-nav-card">
-            <span class="glass-nav-icon">☁️</span>
-            <span class="glass-nav-label">Azure</span>
-        </div>
-        <div class="glass-nav-card">
-            <span class="glass-nav-icon">🔒</span>
-            <span class="glass-nav-label">Secure</span>
-        </div>
-        <div class="glass-nav-card">
-            <span class="glass-nav-icon">⚡</span>
-            <span class="glass-nav-label">Config</span>
-        </div>
-        <div class="glass-nav-card">
-            <span class="glass-nav-icon">📊</span>
-            <span class="glass-nav-label">Stats</span>
-        </div>
-    </div>
     """, unsafe_allow_html=True)
     
-    # Navigation tabs
-    tabs = st.tabs(["📊 Dashboard", "⚡ SMTP", "📧 Email", "📱 SMS", "☁️ Azure", "⏰ Schedule", "✨ Jelly", "⚙️ Settings"])
+    # Glass Navigation Buttons
+    nav_items = [
+        ("📊", "Dashboard"),
+        ("⚡", "SMTP"),
+        ("📧", "Email"),
+        ("📱", "SMS"),
+        ("☁️", "Azure"),
+        ("⏰", "Schedule"),
+        ("✨", "Jelly"),
+        ("⚙️", "Settings")
+    ]
     
-    with tabs[0]:
+    nav_cols = st.columns(len(nav_items))
+    for i, (icon, label) in enumerate(nav_items):
+        with nav_cols[i]:
+            is_active = st.session_state.nav_page == label
+            btn_style = "🔹 " if is_active else ""
+            if st.button(f"{icon}\n{btn_style}{label}", key=f"nav_{label}", use_container_width=True):
+                st.session_state.nav_page = label
+                st.rerun()
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Show selected page content
+    if st.session_state.nav_page == "Dashboard":
         dashboard_ui()
-    
-    with tabs[1]:
+    elif st.session_state.nav_page == "SMTP":
         smtp_config_ui()
-    
-    with tabs[2]:
+    elif st.session_state.nav_page == "Email":
         email_composer_ui()
-    
-    with tabs[3]:
+    elif st.session_state.nav_page == "SMS":
         sms_composer_ui()
-    
-    with tabs[4]:
+    elif st.session_state.nav_page == "Azure":
         azure_sms_ui()
-    
-    with tabs[5]:
+    elif st.session_state.nav_page == "Schedule":
         scheduled_ui()
-    
-    with tabs[6]:
+    elif st.session_state.nav_page == "Jelly":
         jelly_dashboard_ui()
-    
-    with tabs[7]:
+    elif st.session_state.nav_page == "Settings":
         settings_ui()
 
 if __name__ == "__main__":
