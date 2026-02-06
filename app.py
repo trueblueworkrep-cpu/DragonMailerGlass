@@ -1081,6 +1081,52 @@ def inject_neumorphic_glass_css(background_url, theme):
     .stMarkdown div {{
         color: #ffffff !important;
     }}
+    
+    /* ============================================== */
+    /* DROPDOWN MENU ITEMS - LIGHT BLUE GLASS FIX    */
+    /* ============================================== */
+    
+    /* Menu container - light blue glass */
+    [data-baseweb="popover"] > div,
+    [data-baseweb="menu"],
+    ul[role="listbox"] {{
+        background: rgba(30, 60, 120, 0.95) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border: 1px solid rgba(0, 180, 255, 0.3) !important;
+        border-radius: 8px !important;
+    }}
+    
+    /* Individual menu items */
+    [data-baseweb="menu-item"],
+    li[role="option"] {{
+        background: transparent !important;
+        color: #ffffff !important;
+        padding: 10px 15px !important;
+    }}
+    
+    /* Hover state - brighter blue */
+    [data-baseweb="menu-item"]:hover,
+    li[role="option"]:hover,
+    [data-baseweb="menu-item"][aria-selected="true"],
+    li[role="option"][aria-selected="true"] {{
+        background: rgba(0, 180, 255, 0.4) !important;
+        color: #ffffff !important;
+    }}
+    
+    /* Selected/focused item */
+    [data-baseweb="menu-item"]:focus,
+    li[role="option"]:focus {{
+        background: rgba(0, 200, 255, 0.5) !important;
+        outline: none !important;
+    }}
+    
+    /* Text inside menu items */
+    [data-baseweb="menu-item"] *,
+    li[role="option"] * {{
+        color: #ffffff !important;
+    }}
+    
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
