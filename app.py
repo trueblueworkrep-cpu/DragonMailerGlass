@@ -2228,11 +2228,16 @@ def sms_composer_ui():
         
         recipients = [{"phone": phone, "carrier": carrier}] if phone else []
     else:
+        # Carrier dropdown for all bulk numbers
+        bulk_carrier = st.selectbox("📡 Carrier (applies to all numbers)", 
+                                    options=list(SMS_GATEWAYS.keys()), 
+                                    key="bulk_carrier_gateway",
+                                    help="Select carrier for all bulk SMS recipients")
+        
         st.markdown("""
         **📋 Bulk SMS Options:**
-        - Enter numbers manually below, OR
-        - Upload a .txt or .csv file with format: `phone,carrier`
-        - Use `Auto` as carrier to auto-detect
+        - Enter phone numbers below (one per line), OR
+        - Upload a .txt or .csv file with numbers
         """)
         
         # File upload for bulk numbers
@@ -2245,29 +2250,20 @@ def sms_composer_ui():
             st.success(f"✅ Loaded {len(file_content.splitlines())} lines from file")
         
         recipients_text = st.text_area(
-            "📞 Recipients (phone,carrier per line)",
+            "📞 Phone Numbers (one per line)",
             value=recipients_text,
-            placeholder="1234567890,Verizon\n0987654321,T-Mobile\n5551234567,Auto",
+            placeholder="1234567890\n0987654321\n5551234567",
             height=150,
-            help="Format: phone,carrier - Use 'Auto' to auto-detect carrier"
+            help="Enter phone numbers, one per line"
         )
         recipients = []
         for line in recipients_text.split('\n'):
-            line = line.strip()
-            if ',' in line:
-                parts = line.split(',')
-                if len(parts) >= 2:
-                    carrier_input = parts[1].strip()
-                    # Map "Auto" to the SMS_GATEWAYS key
-                    if carrier_input.lower() == "auto":
-                        carrier_input = "Auto (Try All)"
-                    recipients.append({"phone": parts[0].strip(), "carrier": carrier_input})
-            elif line and line.replace('-', '').replace(' ', '').isdigit():
-                # Just a phone number without carrier - use Auto
-                recipients.append({"phone": line.replace('-', '').replace(' ', ''), "carrier": "Auto (Try All)"})
+            line = line.strip().replace('-', '').replace(' ', '').replace('(', '').replace(')', '')
+            if line and line.isdigit():
+                recipients.append({"phone": line, "carrier": bulk_carrier})
         
         if recipients:
-            st.info(f"📊 {len(recipients)} recipients detected")
+            st.info(f"📊 {len(recipients)} recipients detected (Carrier: {bulk_carrier})")
     
     message = st.text_area(
         "💬 Message",
