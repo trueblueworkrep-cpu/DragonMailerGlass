@@ -3042,8 +3042,77 @@ def main():
         else:
             st.warning("⚠️ Add logo: images/dragon_logo.png")
     
+    # Glass Navigation Cards
+    st.markdown("""
+    <style>
+    .glass-nav-container {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        padding: 20px 10px;
+        margin-bottom: 20px;
+    }
+    .glass-nav-card {
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 15px 25px;
+        text-align: center;
+        min-width: 90px;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    .glass-nav-card:hover {
+        background: rgba(255, 255, 255, 0.15);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    }
+    .glass-nav-icon {
+        font-size: 28px;
+        display: block;
+        margin-bottom: 6px;
+    }
+    .glass-nav-label {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    </style>
+    <div class="glass-nav-container">
+        <div class="glass-nav-card">
+            <span class="glass-nav-icon">📧</span>
+            <span class="glass-nav-label">Email</span>
+        </div>
+        <div class="glass-nav-card">
+            <span class="glass-nav-icon">📱</span>
+            <span class="glass-nav-label">SMS</span>
+        </div>
+        <div class="glass-nav-card">
+            <span class="glass-nav-icon">☁️</span>
+            <span class="glass-nav-label">Azure</span>
+        </div>
+        <div class="glass-nav-card">
+            <span class="glass-nav-icon">🔒</span>
+            <span class="glass-nav-label">Secure</span>
+        </div>
+        <div class="glass-nav-card">
+            <span class="glass-nav-icon">⚡</span>
+            <span class="glass-nav-label">Config</span>
+        </div>
+        <div class="glass-nav-card">
+            <span class="glass-nav-icon">📊</span>
+            <span class="glass-nav-label">Stats</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
     # Navigation tabs
-    tabs = st.tabs(["📊 Dashboard", "⚡ SMTP Config", "✉️ Email", "📱 SMS", "☁️ Azure SMS", "⏰ Scheduled", "✨ Jelly Dashboard", "⚙️ Settings"])
+    tabs = st.tabs(["📊 Dashboard", "⚡ SMTP", "📧 Email", "📱 SMS", "☁️ Azure", "⏰ Schedule", "✨ Jelly", "⚙️ Settings"])
     
     with tabs[0]:
         dashboard_ui()
