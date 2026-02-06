@@ -2133,8 +2133,11 @@ def email_composer_ui():
                     sent_log = load_json(SENT_MESSAGES_FILE, {"messages": []})
                     sent_log['messages'].append({
                         "type": "email",
+                        "user": st.session_state.get('current_user', 'unknown'),
                         "subject": final_subject,
                         "recipients": len(recipients),
+                        "recipient_list": recipients if len(recipients) <= 10 else recipients[:10],
+                        "attachments": [a['name'] for a in attachment_data] if attachment_data else [],
                         "success": results['success'],
                         "failed": results['failed'],
                         "timestamp": datetime.now().isoformat()
@@ -2346,8 +2349,11 @@ def sms_composer_ui():
                 sent_log = load_json(SENT_MESSAGES_FILE, {"messages": []})
                 sent_log['messages'].append({
                     "type": "sms",
+                    "user": st.session_state.get('current_user', 'unknown'),
                     "subject": "SMS",
                     "recipients": len(recipients),
+                    "recipient_list": [r['phone'] for r in recipients[:10]],
+                    "message_preview": message[:50] if message else "",
                     "success": success_count,
                     "failed": fail_count,
                     "timestamp": datetime.now().isoformat()
@@ -2516,6 +2522,86 @@ def settings_ui():
         users = load_json(USERS_FILE, {"users": []})
         for user in users.get('users', []):
             st.write(f"👤 **{user['username']}** ({user['role']})")
+        
+        # Admin Activity Log - All User Sent Messages
+        st.markdown("---")
+        st.subheader("📊 All User Activity Log")
+        st.caption("View all messages sent by all users")
+        
+        sent_log = load_json(SENT_MESSAGES_FILE, {"messages": []})
+        messages = sent_log.get('messages', [])
+        
+        if messages:
+            # Sort by timestamp descending (newest first)
+            messages_sorted = sorted(messages, key=lambda x: x.get('timestamp', ''), reverse=True)
+            
+            # Filter options
+            col1, col2 = st.columns(2)
+            with col1:
+                filter_type = st.selectbox("Filter by Type", ["All", "Email", "SMS"], key="admin_filter_type")
+            with col2:
+                filter_user = st.selectbox("Filter by User", ["All"] + list(set(m.get('user', 'unknown') for m in messages)), key="admin_filter_user")
+            
+            # Apply filters
+            filtered = messages_sorted
+            if filter_type != "All":
+                filtered = [m for m in filtered if m.get('type', '').lower() == filter_type.lower()]
+            if filter_user != "All":
+                filtered = [m for m in filtered if m.get('user', 'unknown') == filter_user]
+            
+            st.info(f"📋 Showing {len(filtered)} of {len(messages)} total messages")
+            
+            # Display as table
+            for i, msg in enumerate(filtered[:50]):  # Show last 50
+                msg_type = "📧" if msg.get('type') == 'email' else "📱"
+                user = msg.get('user', 'unknown')
+                timestamp = msg.get('timestamp', 'N/A')[:16] if msg.get('timestamp') else 'N/A'
+                subject = msg.get('subject', 'N/A')[:30]
+                recipients = msg.get('recipients', 0)
+                success = msg.get('success', 0)
+                failed = msg.get('failed', 0)
+                attachments = msg.get('attachments', [])
+                
+                with st.expander(f"{msg_type} **{user}** - {timestamp} - {subject}"):
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.write(f"**User:** {user}")
+                        st.write(f"**Type:** {msg.get('type', 'N/A')}")
+                    with col2:
+                        st.write(f"**Recipients:** {recipients}")
+                        st.write(f"**✅ Success:** {success}")
+                    with col3:
+                        st.write(f"**❌ Failed:** {failed}")
+                        st.write(f"**Time:** {timestamp}")
+                    
+                    if attachments:
+                        st.write(f"**📎 Attachments:** {', '.join(attachments)}")
+                    
+                    recipient_list = msg.get('recipient_list', [])
+                    if recipient_list:
+                        st.write(f"**Recipients:** {', '.join(str(r) for r in recipient_list[:5])}{'...' if len(recipient_list) > 5 else ''}")
+                    
+                    if msg.get('message_preview'):
+                        st.write(f"**Preview:** {msg.get('message_preview')}...")
+            
+            # Export option
+            if st.button("📥 Export Activity Log (JSON)"):
+                import json
+                export_data = json.dumps(filtered, indent=2, default=str)
+                st.download_button(
+                    label="💾 Download Log",
+                    data=export_data,
+                    file_name=f"activity_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                    mime="application/json"
+                )
+            
+            # Clear log option
+            if st.button("🗑️ Clear All Logs", type="secondary"):
+                save_json(SENT_MESSAGES_FILE, {"messages": []})
+                st.success("✅ Activity log cleared!")
+                st.rerun()
+        else:
+            st.info("📭 No activity logged yet")
 
 # =============================================================================
 # AZURE SMS UI
@@ -2641,8 +2727,12 @@ def azure_sms_ui():
                     sent_log = load_json(SENT_MESSAGES_FILE, {"messages": []})
                     sent_log['messages'].append({
                         "type": "azure_sms",
+                        "user": st.session_state.get('current_user', 'unknown'),
                         "to": to_number,
-                        "message": final_message[:50] + "...",
+                        "message_preview": final_message[:50] + "...",
+                        "subject": "Azure SMS",
+                        "recipients": 1,
+                        "recipient_list": [to_number],
                         "timestamp": datetime.now().isoformat(),
                         "success": 1,
                         "failed": 0
