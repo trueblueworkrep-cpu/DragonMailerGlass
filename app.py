@@ -1127,6 +1127,42 @@ def inject_neumorphic_glass_css(background_url, theme):
         color: #ffffff !important;
     }}
     
+    /* ============================================== */
+    /* TEXT ON WHITE BACKGROUNDS - MAKE BLUE         */
+    /* ============================================== */
+    
+    /* Any element with white/light background should have blue text */
+    *[style*="background: white"] *,
+    *[style*="background-color: white"] *,
+    *[style*="background: rgb(255"] *,
+    *[style*="background-color: rgb(255"] *,
+    *[style*="background:#fff"] *,
+    *[style*="background-color:#fff"] * {{
+        color: #0066cc !important;
+    }}
+    
+    /* Streamlit emotion cache classes that may have white bg */
+    .st-emotion-cache-1inwz65,
+    .st-emotion-cache-81oif8,
+    .st-emotion-cache-16idsys,
+    .st-emotion-cache-1v0mbdj,
+    .st-emotion-cache-10trblm {{
+        color: #0055aa !important;
+    }}
+    
+    /* Any div/span inside white background containers */
+    [data-baseweb="popover"] div,
+    [data-baseweb="select"] div {{
+        color: #ffffff !important;
+    }}
+    
+    /* Force blue text on any truly white bg element */
+    div[style*="255, 255, 255"],
+    span[style*="255, 255, 255"],
+    li[style*="255, 255, 255"] {{
+        color: #0066cc !important;
+    }}
+    
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
