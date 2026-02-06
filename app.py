@@ -3056,8 +3056,8 @@ def main():
         -webkit-backdrop-filter: blur(20px) !important;
         border-radius: 16px !important;
         border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        padding: 20px 15px !important;
-        min-height: 90px !important;
+        padding: 15px 8px !important;
+        min-height: 80px !important;
         transition: all 0.3s ease !important;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
     }
@@ -3075,8 +3075,9 @@ def main():
     }
     div[data-testid="stHorizontalBlock"] .glass-btn-wrapper button p {
         color: white !important;
-        font-size: 14px !important;
+        font-size: 11px !important;
         margin: 0 !important;
+        line-height: 1.3 !important;
     }
     </style>
     """, unsafe_allow_html=True)
