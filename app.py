@@ -1081,6 +1081,255 @@ def inject_neumorphic_glass_css(background_url, theme):
     .stMarkdown div {{
         color: #ffffff !important;
     }}
+    
+    /* ============================================================ */
+    /* COMPREHENSIVE FIX FOR ALL WHITE BACKGROUND/TEXT ISSUES      */
+    /* ============================================================ */
+    
+    /* Selectbox - Main container and trigger button */
+    .stSelectbox [data-baseweb="select"],
+    .stSelectbox [data-baseweb="select"] > div {{
+        background: #1a1a2e !important;
+        background-color: #1a1a2e !important;
+        color: #ffffff !important;
+        border: 1px solid {t['accent']}40 !important;
+        border-radius: 12px !important;
+    }}
+    
+    /* Selectbox - The actual clickable part */
+    .stSelectbox [data-baseweb="select"] [data-baseweb="icon"],
+    .stSelectbox [data-baseweb="select"] svg {{
+        fill: #ffffff !important;
+        color: #ffffff !important;
+    }}
+    
+    /* Selectbox - Text inside the selectbox */
+    .stSelectbox [data-baseweb="select"] span,
+    .stSelectbox [data-baseweb="select"] div,
+    .stSelectbox [data-baseweb="select"] p {{
+        color: #ffffff !important;
+    }}
+    
+    /* Dropdown Menu/Popover - The container that appears when you click */
+    [data-baseweb="popover"] {{
+        background: #1a1a2e !important;
+        background-color: #1a1a2e !important;
+        border: 1px solid {t['accent']}60 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
+    }}
+    
+    [data-baseweb="popover"] > div {{
+        background: #1a1a2e !important;
+        background-color: #1a1a2e !important;
+    }}
+    
+    /* Dropdown list - The ul/div containing options */
+    [data-baseweb="menu"],
+    [role="listbox"],
+    ul[role="listbox"] {{
+        background: #1a1a2e !important;
+        background-color: #1a1a2e !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+    }}
+    
+    /* Dropdown options - Each item in the list */
+    [data-baseweb="menu"] li,
+    [data-baseweb="menu"] [role="option"],
+    [role="listbox"] li,
+    [role="option"],
+    .st-emotion-cache-1n76uvr {{
+        background: transparent !important;
+        background-color: transparent !important;
+        color: #ffffff !important;
+        padding: 12px 16px !important;
+    }}
+    
+    /* Hover state for dropdown options */
+    [data-baseweb="menu"] li:hover,
+    [data-baseweb="menu"] [role="option"]:hover,
+    [role="listbox"] li:hover,
+    [role="option"]:hover {{
+        background: {t['accent']}30 !important;
+        background-color: {t['accent']}30 !important;
+        color: #ffffff !important;
+    }}
+    
+    /* Selected option styling */
+    [aria-selected="true"],
+    [data-baseweb="menu"] [aria-selected="true"],
+    [role="option"][aria-selected="true"] {{
+        background: {t['accent']}50 !important;
+        background-color: {t['accent']}50 !important;
+        color: #ffffff !important;
+        font-weight: 600 !important;
+    }}
+    
+    /* File Uploader - Complete styling */
+    [data-testid="stFileUploader"] {{
+        background: rgba(26, 26, 46, 0.8) !important;
+        border: 2px dashed {t['accent']}60 !important;
+        border-radius: 16px !important;
+        padding: 20px !important;
+    }}
+    
+    /* File Uploader - Browse button */
+    [data-testid="stFileUploader"] button,
+    [data-testid="stFileUploader"] [data-testid="baseButton-secondary"],
+    [data-testid="stFileUploaderDropzone"] button {{
+        background: {t['accent']} !important;
+        background-color: {t['accent']} !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 8px 16px !important;
+        font-weight: 500 !important;
+        cursor: pointer !important;
+    }}
+    
+    [data-testid="stFileUploader"] button:hover,
+    [data-testid="stFileUploaderDropzone"] button:hover {{
+        background: {t['accent']}cc !important;
+        transform: translateY(-1px) !important;
+    }}
+    
+    /* File Uploader - Text and labels */
+    [data-testid="stFileUploader"] span,
+    [data-testid="stFileUploader"] p,
+    [data-testid="stFileUploader"] label,
+    [data-testid="stFileUploader"] small,
+    [data-testid="stFileUploaderDropzone"] span,
+    [data-testid="stFileUploaderDropzoneInstructions"] span,
+    [data-testid="stFileUploaderDropzoneInstructions"] div {{
+        color: #ffffff !important;
+    }}
+    
+    /* Multiselect styling */
+    .stMultiSelect [data-baseweb="select"],
+    .stMultiSelect [data-baseweb="select"] > div {{
+        background: #1a1a2e !important;
+        color: #ffffff !important;
+        border: 1px solid {t['accent']}40 !important;
+        border-radius: 12px !important;
+    }}
+    
+    .stMultiSelect [data-baseweb="tag"] {{
+        background: {t['accent']}40 !important;
+        color: #ffffff !important;
+        border-radius: 6px !important;
+    }}
+    
+    /* Radio buttons - text visibility */
+    .stRadio label,
+    .stRadio span,
+    .stRadio div {{
+        color: #ffffff !important;
+    }}
+    
+    .stRadio [data-baseweb="radio"] {{
+        background: transparent !important;
+    }}
+    
+    /* Checkbox - text visibility */
+    .stCheckbox label,
+    .stCheckbox span {{
+        color: #ffffff !important;
+    }}
+    
+    /* Toggle/Switch styling */
+    [data-testid="stToggle"] span {{
+        color: #ffffff !important;
+    }}
+    
+    /* Date/Time Input */
+    .stDateInput input,
+    .stTimeInput input {{
+        background: #1a1a2e !important;
+        color: #ffffff !important;
+        border: 1px solid {t['accent']}40 !important;
+        border-radius: 12px !important;
+    }}
+    
+    /* Slider styling */
+    .stSlider label,
+    .stSlider span {{
+        color: #ffffff !important;
+    }}
+    
+    /* Color picker */
+    .stColorPicker label {{
+        color: #ffffff !important;
+    }}
+    
+    /* Data editor and tables */
+    [data-testid="stDataFrame"],
+    .stDataFrame {{
+        background: #1a1a2e !important;
+        border-radius: 12px !important;
+    }}
+    
+    [data-testid="stDataFrame"] th,
+    [data-testid="stDataFrame"] td {{
+        background: #1a1a2e !important;
+        color: #ffffff !important;
+        border-color: {t['accent']}30 !important;
+    }}
+    
+    /* Force all streamlit emotion cache elements to have visible text */
+    [class*="st-emotion-cache"] {{
+        color: #ffffff !important;
+    }}
+    
+    /* Override any inline white backgrounds */
+    [style*="background: white"],
+    [style*="background-color: white"],
+    [style*="background: rgb(255, 255, 255)"],
+    [style*="background-color: rgb(255, 255, 255)"],
+    [style*="background:#fff"],
+    [style*="background-color:#fff"] {{
+        background: #1a1a2e !important;
+        background-color: #1a1a2e !important;
+        color: #ffffff !important;
+    }}
+    
+    /* Ensure all text areas have proper styling */
+    textarea {{
+        background: #1a1a2e !important;
+        color: #ffffff !important;
+    }}
+    
+    /* Caption and small text */
+    .stCaption,
+    [data-testid="stCaption"],
+    small {{
+        color: rgba(255, 255, 255, 0.7) !important;
+    }}
+    
+    /* Form container */
+    [data-testid="stForm"] {{
+        background: rgba(26, 26, 46, 0.6) !important;
+        border: 1px solid {t['accent']}30 !important;
+        border-radius: 16px !important;
+        padding: 20px !important;
+    }}
+    
+    /* Expander content - ensure all nested elements are visible */
+    details,
+    details summary,
+    details div {{
+        color: #ffffff !important;
+    }}
+    
+    /* Toast messages */
+    [data-testid="stToast"] {{
+        background: #1a1a2e !important;
+        color: #ffffff !important;
+        border: 1px solid {t['accent']}40 !important;
+    }}
+    
+    /* ============================================================ */
+    
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
