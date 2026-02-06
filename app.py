@@ -1466,12 +1466,13 @@ def inject_neumorphic_glass_css(background_url, theme):
         --dropdown-bg: #1a1a2e;
     }}
     
-    /* Force glass on ANY white background using attribute selectors */
-    *[style*="rgb(255"],
-    *[style*="rgba(255"],
-    *[style*="#fff"],
-    *[style*="#FFF"],
-    *[style*="white"] {{
+    /* Force dark on white backgrounds ONLY in dropdowns/menus */
+    [data-baseweb="popover"] *[style*="rgb(255"],
+    [data-baseweb="popover"] *[style*="white"],
+    [data-baseweb="menu"] *[style*="rgb(255"],
+    [data-baseweb="menu"] *[style*="white"],
+    [role="listbox"] *[style*="rgb(255"],
+    [role="listbox"] *[style*="white"] {{
         background: #1a1a2e !important;
         background-color: #1a1a2e !important;
     }}
@@ -1627,14 +1628,13 @@ def play_sound(sound_type):
     """, unsafe_allow_html=True)
 
 def inject_white_background_fixer():
-    """Inject JavaScript that actively monitors and fixes white backgrounds"""
+    """Inject JavaScript that actively monitors and fixes white backgrounds in dropdowns only"""
     fixer_js = """
     <script>
-    // Dragon Mailer - White Background Fixer
+    // Dragon Mailer - White Background Fixer (Dropdowns Only)
     (function() {
-        const darkBg = 'rgb(26, 26, 46)';
-        const darkBgAlt = '#1a1a2e';
-        const lightText = 'rgb(255, 255, 255)';
+        const darkBg = '#1a1a2e';
+        const lightText = '#ffffff';
         
         function isWhiteish(color) {
             if (!color) return false;
@@ -1646,82 +1646,95 @@ def inject_white_background_fixer():
                     const r = parseInt(match[1]);
                     const g = parseInt(match[2]);
                     const b = parseInt(match[3]);
-                    // If all values are above 240, it's whitish
                     if (r > 240 && g > 240 && b > 240) return true;
                 }
             }
             return false;
         }
         
-        function fixElement(el) {
-            const computed = window.getComputedStyle(el);
-            const bg = computed.backgroundColor;
+        function fixDropdownElement(el) {
+            // Skip main app containers
+            if (el.classList && (
+                el.classList.contains('stApp') || 
+                el.classList.contains('main') ||
+                el.tagName === 'BODY' ||
+                el.tagName === 'HTML'
+            )) return;
             
+            // Skip elements with background images
+            const computed = window.getComputedStyle(el);
+            if (computed.backgroundImage && computed.backgroundImage !== 'none') return;
+            
+            const bg = computed.backgroundColor;
             if (isWhiteish(bg)) {
-                el.style.setProperty('background-color', darkBgAlt, 'important');
-                el.style.setProperty('background', darkBgAlt, 'important');
+                el.style.setProperty('background-color', darkBg, 'important');
                 el.style.setProperty('color', lightText, 'important');
             }
         }
         
-        function fixAllDropdowns() {
-            // Fix all potential dropdown/menu elements
-            const selectors = [
-                '[data-baseweb="popover"]',
+        function fixDropdowns() {
+            // Only target specific dropdown/menu elements
+            const dropdownSelectors = [
+                '[data-baseweb="popover"] > div',
                 '[data-baseweb="menu"]',
                 '[data-baseweb="menu-item"]',
-                '[data-baseweb="select"]',
                 '[role="listbox"]',
                 '[role="option"]',
-                '.stSelectbox div',
-                '.stMultiSelect div',
-                'ul[data-testid]',
-                'li[role="option"]'
+                'ul[data-baseweb="menu"]',
+                'li[data-baseweb="menu-item"]',
+                '.stSelectbox [data-baseweb="select"] > div > div:last-child',
+                '[data-baseweb="popover-body"]'
             ];
             
-            selectors.forEach(selector => {
-                document.querySelectorAll(selector).forEach(fixElement);
-            });
-            
-            // Also check all elements with inline white backgrounds
-            document.querySelectorAll('*').forEach(el => {
-                const style = el.getAttribute('style');
-                if (style && (style.includes('255') || style.includes('white') || style.includes('#fff'))) {
-                    fixElement(el);
-                }
+            dropdownSelectors.forEach(selector => {
+                document.querySelectorAll(selector).forEach(fixDropdownElement);
             });
         }
         
-        // Run on page load
-        fixAllDropdowns();
-        
-        // Observe DOM changes
+        // Observe DOM for new dropdowns
         const observer = new MutationObserver(function(mutations) {
+            let shouldFix = false;
             mutations.forEach(function(mutation) {
                 if (mutation.addedNodes.length) {
-                    setTimeout(fixAllDropdowns, 10);
+                    mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === 1) {
+                            // Check if it's a dropdown-related element
+                            if (node.getAttribute && (
+                                node.getAttribute('data-baseweb') ||
+                                node.getAttribute('role') === 'listbox' ||
+                                node.getAttribute('role') === 'option'
+                            )) {
+                                shouldFix = true;
+                            }
+                        }
+                    });
                 }
             });
+            if (shouldFix) {
+                setTimeout(fixDropdowns, 10);
+            }
         });
         
         observer.observe(document.body, {
             childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ['style', 'class']
+            subtree: true
         });
         
-        // Also fix on any click (for dropdowns)
-        document.addEventListener('click', function() {
-            setTimeout(fixAllDropdowns, 50);
-            setTimeout(fixAllDropdowns, 150);
-            setTimeout(fixAllDropdowns, 300);
+        // Fix on click (for dropdown opens)
+        document.addEventListener('click', function(e) {
+            // Only fix if clicking on a select/dropdown
+            const target = e.target;
+            if (target.closest && (
+                target.closest('.stSelectbox') ||
+                target.closest('[data-baseweb="select"]') ||
+                target.closest('.stMultiSelect')
+            )) {
+                setTimeout(fixDropdowns, 50);
+                setTimeout(fixDropdowns, 150);
+            }
         });
         
-        // Fix periodically as fallback
-        setInterval(fixAllDropdowns, 500);
-        
-        console.log('Dragon Mailer: White background fixer active');
+        console.log('Dragon Mailer: Dropdown fixer active');
     })();
     </script>
     """
