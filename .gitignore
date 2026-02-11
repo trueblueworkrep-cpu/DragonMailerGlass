@@ -22,3 +22,12 @@ build/
 .env
 *.env
 venv/
+
+# Local deployment artifacts (never commit)
+.deploy/
+
+# If a venv is accidentally created at repo root (Windows layout)
+Lib/
+Scripts/
+etc/
+share/

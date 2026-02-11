@@ -1,4 +1,4 @@
-"""
+﻿"""
 Modern Email & SMS Mailer - Neumorphic Glass Edition
 A beautiful real-time messaging application with nature-inspired glass themes
 """
@@ -6,20 +6,20 @@ A beautiful real-time messaging application with nature-inspired glass themes
 import streamlit as st
 import smtplib
 import json
-import base64
+import os
 import hashlib
 import random
 import string
 import uuid
 import re
 import time
-from io import BytesIO
+import threading
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 from email.utils import formatdate, make_msgid
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 # Try to import Jelly components for animated UI
@@ -61,84 +61,6 @@ st.set_page_config(
 
 # Logo path
 LOGO_PATH = Path(__file__).parent / "images" / "dragon_logo.png"
-LOGIN_BG_PRIMARY_PATH = Path(__file__).parent / "images" / "login_bg.png"
-LOGIN_BG_FALLBACK_PATH = Path(__file__).parent / "images" / "home_banner.PNG"
-
-# Login-only visual tokens (dark baseline + light override).
-LOGIN_COLORWAYS = {
-    "dark": {
-        "login-stage-radial-1": "rgba(255, 45, 99, 0.85)",
-        "login-stage-radial-2": "rgba(61, 125, 255, 0.85)",
-        "login-stage-radial-3": "rgba(138, 43, 226, 0.75)",
-        "login-stage-radial-4": "rgba(53, 211, 255, 0.40)",
-        "login-stage-base-1": "#090a22",
-        "login-stage-base-2": "#070a1d",
-        "login-stage-base-3": "#06071a",
-        "login-blob-1": "#ff2e63",
-        "login-blob-2": "#2d7dff",
-        "login-blob-3": "#7c2ae8",
-        "login-blob-4": "#35d3ff",
-        "login-grain-opacity": "0.05",
-        "login-glass-fill": "rgba(255,255,255,0.12)",
-        "login-glass-border": "rgba(255,255,255,0.28)",
-        "login-glass-shadow": "0 30px 84px rgba(0,0,0,0.38)",
-        "login-card-bg": "rgba(14, 18, 43, 0.46)",
-        "login-card-border": "rgba(255,255,255,0.28)",
-        "login-card-highlight": "rgba(255,255,255,0.22)",
-        "login-card-shadow": "0 30px 70px rgba(0,0,0,0.42)",
-        "login-text": "#f6f8ff",
-        "login-text-muted": "rgba(236, 241, 255, 0.78)",
-        "login-title-grad-1": "#8be8ff",
-        "login-title-grad-2": "#65a8ff",
-        "login-title-grad-3": "#f77bff",
-        "login-input-bg": "rgba(7, 11, 30, 0.5)",
-        "login-input-border": "rgba(191, 210, 255, 0.4)",
-        "login-input-text": "#f8fbff",
-        "login-input-placeholder": "rgba(213, 226, 255, 0.62)",
-        "login-focus-ring": "rgba(104, 214, 255, 0.6)",
-        "login-button-start": "#43d4ff",
-        "login-button-end": "#7c53ff",
-        "login-button-text": "#fbfdff",
-        "login-alert-bg": "rgba(8, 14, 35, 0.5)",
-        "login-alert-border": "rgba(124, 83, 255, 0.55)",
-    },
-    "light": {
-        "login-stage-radial-1": "rgba(240, 121, 236, 0.62)",
-        "login-stage-radial-2": "rgba(130, 182, 255, 0.58)",
-        "login-stage-radial-3": "rgba(181, 137, 255, 0.5)",
-        "login-stage-radial-4": "rgba(139, 233, 255, 0.34)",
-        "login-stage-base-1": "#dfe8ff",
-        "login-stage-base-2": "#d5dcff",
-        "login-stage-base-3": "#cfd8ff",
-        "login-blob-1": "#ff70b3",
-        "login-blob-2": "#56a6ff",
-        "login-blob-3": "#a174ff",
-        "login-blob-4": "#74dfff",
-        "login-grain-opacity": "0.03",
-        "login-glass-fill": "rgba(255,255,255,0.2)",
-        "login-glass-border": "rgba(255,255,255,0.52)",
-        "login-glass-shadow": "0 24px 66px rgba(70, 89, 155, 0.25)",
-        "login-card-bg": "rgba(248, 250, 255, 0.58)",
-        "login-card-border": "rgba(194, 207, 255, 0.65)",
-        "login-card-highlight": "rgba(255,255,255,0.8)",
-        "login-card-shadow": "0 24px 60px rgba(66, 84, 152, 0.2)",
-        "login-text": "#1b2550",
-        "login-text-muted": "rgba(31, 47, 92, 0.8)",
-        "login-title-grad-1": "#0ea5e9",
-        "login-title-grad-2": "#4f46e5",
-        "login-title-grad-3": "#db2777",
-        "login-input-bg": "rgba(255, 255, 255, 0.82)",
-        "login-input-border": "rgba(136, 160, 235, 0.5)",
-        "login-input-text": "#13214a",
-        "login-input-placeholder": "rgba(69, 88, 145, 0.54)",
-        "login-focus-ring": "rgba(14, 165, 233, 0.45)",
-        "login-button-start": "#0ea5e9",
-        "login-button-end": "#6d28d9",
-        "login-button-text": "#f8fbff",
-        "login-alert-bg": "rgba(245, 248, 255, 0.72)",
-        "login-alert-border": "rgba(109, 40, 217, 0.42)",
-    },
-}
 
 # =============================================================================
 # NATURE BACKGROUNDS & NEUMORPHIC GLASS THEMES
@@ -223,8 +145,6 @@ GLASS_THEMES = {
         "blur": "20px"
     },
 }
-
-UI_THEME_OPTIONS = ["Glass", "Dark", "Light"]
 
 # SMS Carrier Gateways (US)
 SMS_GATEWAYS = {
@@ -377,190 +297,6 @@ def save_json(filepath, data):
         return True
     except Exception:
         return False
-
-@st.cache_data(show_spinner=False)
-def get_local_image_data_uri(path_str):
-    """Return a local image as a data URI for fast, network-free rendering."""
-    path = Path(path_str)
-    if not path.exists():
-        return ""
-
-    ext = path.suffix.lower()
-    mime = {
-        ".png": "image/png",
-        ".jpg": "image/jpeg",
-        ".jpeg": "image/jpeg",
-        ".webp": "image/webp",
-        ".gif": "image/gif",
-    }.get(ext, "application/octet-stream")
-
-    with open(path, "rb") as f:
-        encoded = base64.b64encode(f.read()).decode("ascii")
-    return f"data:{mime};base64,{encoded}"
-
-@st.cache_data(show_spinner=False)
-def get_optimized_login_bg_data_uri(path_str, max_width=1600, quality=72):
-    """Return a compressed background data URI to reduce login CSS payload size."""
-    path = Path(path_str)
-    if not path.exists():
-        return ""
-
-    try:
-        from PIL import Image  # Optional optimization path.
-
-        with Image.open(path) as img:
-            img = img.convert("RGB")
-            if img.width > max_width:
-                target_height = int((img.height * max_width) / img.width)
-                img = img.resize((max_width, target_height))
-
-            buffer = BytesIO()
-            img.save(buffer, format="JPEG", quality=quality, optimize=True, progressive=True)
-            encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
-            return f"data:image/jpeg;base64,{encoded}"
-    except Exception:
-        # Fallback to the original file if PIL isn't available.
-        return get_local_image_data_uri(path_str)
-
-def load_app_settings():
-    """Load app settings with safe defaults."""
-    return load_json(SETTINGS_FILE, {
-        "theme": "Glass",
-        "available_themes": UI_THEME_OPTIONS,
-        "water_refraction_depth": 0.6,
-        "login_enabled": True,
-        "password_hash": "",
-        "multi_user_enabled": True,
-        "session_timeout": 3600
-    })
-
-def get_saved_ui_theme():
-    """Get persisted UI theme mode."""
-    settings = load_app_settings()
-    theme = settings.get("theme", "Glass")
-    if theme in UI_THEME_OPTIONS:
-        if settings.get("available_themes") != UI_THEME_OPTIONS:
-            settings["available_themes"] = UI_THEME_OPTIONS
-            save_json(SETTINGS_FILE, settings)
-        return theme
-    # Heal stale/unsupported saved theme values.
-    settings["theme"] = "Glass"
-    settings["available_themes"] = UI_THEME_OPTIONS
-    save_json(SETTINGS_FILE, settings)
-    return "Glass"
-
-def get_saved_refraction_depth():
-    """Get persisted water refraction depth in [0.0, 1.0]."""
-    settings = load_app_settings()
-    try:
-        depth = float(settings.get("water_refraction_depth", 0.6))
-    except (TypeError, ValueError):
-        depth = 0.6
-    return max(0.0, min(1.0, depth))
-
-def save_ui_theme(theme_name):
-    """Persist UI theme mode to settings.json."""
-    settings = load_app_settings()
-    settings["theme"] = theme_name if theme_name in UI_THEME_OPTIONS else "Glass"
-    settings["available_themes"] = UI_THEME_OPTIONS
-    return save_json(SETTINGS_FILE, settings)
-
-def save_refraction_depth(depth_value):
-    """Persist water refraction depth to settings.json."""
-    settings = load_app_settings()
-    try:
-        depth = float(depth_value)
-    except (TypeError, ValueError):
-        depth = 0.6
-    settings["water_refraction_depth"] = max(0.0, min(1.0, depth))
-    return save_json(SETTINGS_FILE, settings)
-
-def set_active_ui_theme(theme_name):
-    """Update active UI theme and persist if changed."""
-    normalized = theme_name if theme_name in UI_THEME_OPTIONS else UI_THEME_OPTIONS[0]
-    changed = normalized != st.session_state.get("ui_theme", "Glass")
-    st.session_state["ui_theme"] = normalized
-    if changed:
-        save_ui_theme(normalized)
-    return changed
-
-def normalize_ui_theme_state():
-    """Ensure in-memory widget/theme state stays within available UI theme options."""
-    active_theme = st.session_state.get("ui_theme", UI_THEME_OPTIONS[0])
-    if active_theme not in UI_THEME_OPTIONS:
-        active_theme = UI_THEME_OPTIONS[0]
-        st.session_state["ui_theme"] = active_theme
-        save_ui_theme(active_theme)
-
-    for key in ("settings_ui_theme", "sidebar_ui_theme"):
-        value = st.session_state.get(key)
-        if value not in UI_THEME_OPTIONS:
-            st.session_state[key] = active_theme
-
-def normalize_visual_preferences():
-    """Ensure glass palette and background selections always point to valid options."""
-    glass_options = list(GLASS_THEMES.keys())
-    background_options = list(NATURE_BACKGROUNDS.keys())
-
-    if st.session_state.get("theme") not in GLASS_THEMES:
-        st.session_state["theme"] = glass_options[0]
-    if st.session_state.get("background") not in NATURE_BACKGROUNDS:
-        st.session_state["background"] = background_options[0]
-
-def get_active_ui_theme():
-    """Return the normalized active interface theme."""
-    theme = st.session_state.get("ui_theme", UI_THEME_OPTIONS[0])
-    return theme if theme in UI_THEME_OPTIONS else UI_THEME_OPTIONS[0]
-
-def get_ui_theme_visuals():
-    """Theme-tuned visual tokens for shared widgets."""
-    theme = get_active_ui_theme()
-    if theme == "Dark":
-        return {"progress_scheme": "teal", "accent": "#22c55e"}
-    if theme == "Light":
-        return {"progress_scheme": "orange", "accent": "#0ea5e9"}
-    return {"progress_scheme": "blue_orange", "accent": "#00d4ff"}
-
-def show_themed_notification(message, level="info"):
-    """Render notifications with active UI theme components."""
-    if JELLY_AVAILABLE:
-        jelly_notification(message, level)
-    else:
-        fallback = {
-            "success": st.success,
-            "warning": st.warning,
-            "error": st.error,
-            "info": st.info
-        }
-        fallback.get(level, st.info)(message)
-
-def show_themed_loading(text):
-    """Render loading state with active UI theme components."""
-    if JELLY_AVAILABLE:
-        jelly_loading(text)
-    else:
-        st.info(text)
-
-def show_themed_progress(value, label="Progress", color="#22c55e"):
-    """Render progress widget with active UI theme components."""
-    clamped_value = max(0.0, min(1.0, value))
-    if JELLY_AVAILABLE:
-        jelly_progress(clamped_value, label, color)
-    else:
-        st.progress(clamped_value)
-
-def get_dashboard_components():
-    """Return dashboard component family for the active UI mode."""
-    if JELLY_AVAILABLE:
-        return {
-            "blob_metric": jelly_blob_metric,
-            "blob_intensity": jelly_blob_intensity,
-            "blob_volume": jelly_blob_volume,
-            "blob_progress": jelly_blob_progress,
-            "blob_bounce": jelly_blob_bounce,
-            "stats_card": jelly_stats_card,
-        }
-    return None
 
 def get_user_smtp_config_file(username=None):
     """Get SMTP config file path for a specific user"""
@@ -750,10 +486,7 @@ def get_pending_tasks():
     pending = []
     for task in data["tasks"]:
         if task.get("status") == "pending":
-            try:
-                scheduled_time = datetime.fromisoformat(task.get("scheduled_time", ""))
-            except (TypeError, ValueError):
-                continue
+            scheduled_time = datetime.fromisoformat(task.get("scheduled_time", ""))
             if scheduled_time <= now:
                 pending.append(task)
     return pending
@@ -762,15 +495,9 @@ def get_pending_tasks():
 # CSS INJECTION FOR NEUMORPHIC GLASS
 # =============================================================================
 
-def inject_neumorphic_glass_css(background_url, theme, refraction_depth=0.6):
+def inject_neumorphic_glass_css(background_url, theme):
     """Inject beautiful neumorphic glass CSS"""
     t = GLASS_THEMES[theme]
-    depth = max(0.0, min(1.0, float(refraction_depth)))
-    water_overlay_alpha = 0.14 + (depth * 0.24)
-    caustic_alpha = 0.05 + (depth * 0.14)
-    water_blur_px = int(12 + (depth * 20))
-    panel_blur_px = int(16 + (depth * 14))
-    panel_bg_alpha = 0.66 + (depth * 0.16)
     
     css = f"""
     <style>
@@ -795,45 +522,15 @@ def inject_neumorphic_glass_css(background_url, theme, refraction_depth=0.6):
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, {water_overlay_alpha:.2f});
+        background: rgba(0, 0, 0, 0.2);
         z-index: -1;
-    }}
-
-    .stApp::after {{
-        content: '';
-        position: fixed;
-        top: -6%;
-        left: -4%;
-        width: 108%;
-        height: 112%;
-        background:
-            radial-gradient(720px circle at 15% 28%, rgba(255,255,255,{caustic_alpha:.2f}) 0%, rgba(255,255,255,0) 58%),
-            radial-gradient(680px circle at 82% 74%, rgba(255,255,255,{caustic_alpha:.2f}) 0%, rgba(255,255,255,0) 62%),
-            repeating-linear-gradient(
-                115deg,
-                rgba(255,255,255,0.00) 0px,
-                rgba(255,255,255,0.00) 22px,
-                rgba(255,255,255,{caustic_alpha * 0.6:.2f}) 34px,
-                rgba(255,255,255,0.00) 48px
-            );
-        mix-blend-mode: screen;
-        filter: blur({water_blur_px}px);
-        pointer-events: none;
-        animation: waterRefractionDrift 16s ease-in-out infinite;
-        z-index: -1;
-    }}
-
-    @keyframes waterRefractionDrift {{
-        0%, 100% {{ transform: translate(0px, 0px) scale(1); }}
-        33% {{ transform: translate(18px, -12px) scale(1.02); }}
-        66% {{ transform: translate(-12px, 14px) scale(0.98); }}
     }}
     
     /* Main Container Glass Effect */
     .main .block-container {{
-        background: rgba(15, 15, 30, {panel_bg_alpha:.2f});
-        backdrop-filter: blur({panel_blur_px}px) saturate(170%);
-        -webkit-backdrop-filter: blur({panel_blur_px}px) saturate(170%);
+        background: rgba(15, 15, 30, 0.75);
+        backdrop-filter: blur({t['blur']});
+        -webkit-backdrop-filter: blur({t['blur']});
         border-radius: 24px;
         border: 1px solid {t['glass_border']};
         box-shadow: 
@@ -1549,67 +1246,6 @@ def inject_neumorphic_glass_css(background_url, theme, refraction_depth=0.6):
     """
     st.markdown(css, unsafe_allow_html=True)
 
-def inject_ui_theme_overrides(theme_name):
-    """Apply interface-level theme overrides on top of base glass styling."""
-    if theme_name == "Dark":
-        st.markdown("""
-        <style>
-        .stApp::before {
-            background: rgba(0, 0, 0, 0.48) !important;
-        }
-        .main .block-container {
-            background: rgba(10, 12, 24, 0.86) !important;
-            border-color: rgba(148, 163, 184, 0.24) !important;
-        }
-        [data-testid="stSidebar"] {
-            background: rgba(8, 10, 20, 0.9) !important;
-        }
-        .stButton > button {
-            background: rgba(16, 24, 40, 0.92) !important;
-            border-color: rgba(34, 197, 94, 0.45) !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-    elif theme_name == "Light":
-        st.markdown("""
-        <style>
-        .stApp::before {
-            background: rgba(245, 250, 255, 0.2) !important;
-        }
-        .main .block-container {
-            background: rgba(255, 255, 255, 0.78) !important;
-            border-color: rgba(14, 165, 233, 0.3) !important;
-        }
-        [data-testid="stSidebar"] {
-            background: rgba(255, 255, 255, 0.74) !important;
-            border-right: 1px solid rgba(14, 165, 233, 0.3) !important;
-        }
-        h1, h2, h3, h4, h5, h6,
-        p, span, label, div, .stMarkdown {
-            color: #0f172a !important;
-            text-shadow: none !important;
-        }
-        .stTextInput > div > div > input,
-        .stTextArea > div > div > textarea,
-        .stNumberInput > div > div > input,
-        .stSelectbox > div > div > div,
-        .stSelectbox > div > div {
-            background: rgba(255, 255, 255, 0.9) !important;
-            color: #0f172a !important;
-            border-color: rgba(14, 165, 233, 0.35) !important;
-        }
-        .stTextInput > div > div > input::placeholder,
-        .stTextArea > div > div > textarea::placeholder {
-            color: rgba(15, 23, 42, 0.45) !important;
-        }
-        .stButton > button {
-            background: rgba(239, 246, 255, 0.92) !important;
-            color: #0f172a !important;
-            border-color: rgba(14, 165, 233, 0.45) !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-
 # =============================================================================
 # SOUND EFFECTS SYSTEM
 # =============================================================================
@@ -1861,14 +1497,10 @@ def send_bulk_emails(smtp_config, recipients, subject, body, is_html=False, prog
 
 def init_session_state():
     """Initialize session state variables"""
-    saved_ui_theme = get_saved_ui_theme()
-    saved_refraction_depth = get_saved_refraction_depth()
     defaults = {
         'authenticated': False,
         'current_user': None,
         'user_role': None,
-        'ui_theme': saved_ui_theme,
-        'water_refraction_depth': saved_refraction_depth,
         'theme': '🏝️ Lake Teal',
         'background': '🌲 Misty Forest',
         'smtp_configs': [],
@@ -1906,442 +1538,309 @@ def create_default_admin():
         save_json(USERS_FILE, users)
 
 def login_page():
-    """Display a center-locked liquid-glass login page."""
+    """Display beautiful glass login page with lake background"""
     import base64
-
-    dark_vars = "\n".join(
-        f"            --{name}: {value};"
-        for name, value in LOGIN_COLORWAYS["dark"].items()
-    )
-    light_vars = "\n".join(
-        f"                --{name}: {value};"
-        for name, value in LOGIN_COLORWAYS["light"].items()
-    )
-
-    css = (
-        """
+    
+    # Lake background image - Emerald Bay style
+    LOGIN_BG_IMAGE = "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=85"
+    
+    # Colors that complement the lake/forest scene
+    orb1 = "#0ea5e9"  # Sky blue
+    orb2 = "#059669"  # Forest green
+    orb3 = "#6366f1"  # Twilight purple
+    
+    # Inject beautiful login CSS with lake background
+    st.markdown(f"""
     <style>
-        :root {
-"""
-        + dark_vars
-        + """
-        }
-
-        @media (prefers-color-scheme: light) {
-            :root {
-"""
-        + light_vars
-        + """
-            }
-        }
-
-        html, body {
-            height: 100vh !important;
+        /* Fullscreen glass login with lake background */
+        html, body {{ overflow: hidden !important; height: 100vh !important; }}
+        .stApp {{
             overflow: hidden !important;
-        }
-
-        .stApp {
+            background: url('{LOGIN_BG_IMAGE}') no-repeat center center fixed !important;
+            background-size: cover !important;
             min-height: 100vh !important;
-            min-height: 100dvh !important;
-            background: #050717 !important;
-            overflow: hidden !important;
-            color: var(--login-text) !important;
-            position: relative !important;
-        }
-
-        header[data-testid="stHeader"], #MainMenu, footer, .stDeployButton,
-        [data-testid="stSidebar"] {
-            display: none !important;
-        }
-
-        .block-container {
-            padding: 0 !important;
-            max-width: 100% !important;
-        }
-
-        .login-stage {
+        }}
+        .stApp::before {{
+            content: '';
             position: fixed;
-            inset: 0;
-            width: 100vw;
-            height: 100dvh;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(10, 30, 50, 0.4) 0%, rgba(20, 60, 80, 0.3) 50%, rgba(40, 60, 80, 0.4) 100%);
             z-index: 0;
             pointer-events: none;
-            overflow: hidden;
-            background:
-              radial-gradient(1100px 650px at 25% 18%, rgba(255,45,99,.85) 0%, rgba(255,45,99,0) 60%),
-              radial-gradient(900px 600px at 80% 25%, rgba(61,125,255,.85) 0%, rgba(61,125,255,0) 55%),
-              radial-gradient(900px 650px at 62% 92%, rgba(138,43,226,.75) 0%, rgba(138,43,226,0) 60%),
-              linear-gradient(135deg, #090a22 0%, #070a1d 45%, #06071a 100%);
-        }
-        .login-stage::before {
-            content: "";
-            position: absolute;
-            inset: -10%;
-            background:
-              radial-gradient(48% 42% at 50% 48%, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 65%),
-              radial-gradient(30% 26% at 26% 70%, rgba(53,211,255,0.2) 0%, rgba(53,211,255,0) 75%),
-              radial-gradient(30% 26% at 74% 32%, rgba(124,42,232,0.2) 0%, rgba(124,42,232,0) 75%);
-            filter: blur(22px);
-            opacity: 0.7;
-            animation: stageShinePulse 10s ease-in-out infinite;
-        }
-
-        .blob {
-            position: absolute;
-            border-radius: 999px;
-            filter: blur(55px);
-            opacity: 0.55;
-            mix-blend-mode: screen;
-            transform: translateZ(0);
-        }
-        .b1 { width: 420px; height: 420px; left: -120px; top: 40px; background: #ff2e63; }
-        .b2 { width: 360px; height: 360px; right: -120px; top: 90px; background: #2d7dff; opacity: 0.50; }
-        .b3 { width: 520px; height: 520px; left: 46%; top: 58%; background: #7c2ae8; opacity: 0.38; }
-        .b4 { width: 220px; height: 220px; left: 62%; top: 18%; background: #35d3ff; opacity: 0.40; }
-
-        .glass {
-            position: absolute;
-            top: 12%;
-            width: 58%;
-            height: 76%;
-            border-radius: 28px;
-            overflow: hidden;
-            box-shadow: var(--login-glass-shadow);
-            border: 1px solid rgba(255,255,255,0.18);
-        }
-        .glass::after {
-            content: "";
-            position: absolute;
-            inset: -1px;
-            border-radius: inherit;
+        }}
+        header[data-testid="stHeader"], #MainMenu, footer, .stDeployButton,
+        [data-testid="stSidebar"] {{ display: none !important; }}
+        .block-container {{ padding: 0 !important; max-width: 100% !important; }}
+        
+        /* HIDE fullscreen/toolbar buttons on images - ALL selectors */
+        .stElementToolbar,
+        [data-testid="stElementToolbar"],
+        [data-testid="stElementToolbarButton"],
+        [data-testid="stElementToolbarButtonContainer"],
+        .st-emotion-cache-12rj9lz,
+        .st-emotion-cache-1yq8s3s,
+        .e1usqpj01,
+        button[aria-label="Fullscreen"],
+        button[data-testid="stBaseButton-elementToolbar"] {{
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }}
+        
+        /* Floating orbs */
+        .orb {{
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(50px);
+            opacity: 0.35;
+            z-index: 0;
             pointer-events: none;
-            border: 1px solid rgba(255,255,255,0.26);
-            box-shadow:
-              0 0 18px rgba(255,255,255,0.22),
-              0 0 40px rgba(124,83,255,0.28),
-              0 0 58px rgba(53,211,255,0.22);
-            mix-blend-mode: screen;
-            animation: glassAuraPulse 5.6s ease-in-out infinite;
-        }
-        .glass.left { left: -23%; transform: perspective(1200px) rotateY(10deg); }
-        .glass.right { right: -23%; transform: perspective(1200px) rotateY(-10deg); }
-
-        .glass__surface {
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            background: var(--login-glass-fill);
-            border: 1px solid var(--login-glass-border);
-            backdrop-filter: blur(18px) saturate(140%);
-            -webkit-backdrop-filter: blur(18px) saturate(140%);
-            filter: url(#liquid);
-        }
-        .glass__shine {
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            opacity: 0.55;
-            mix-blend-mode: screen;
-            background:
-              linear-gradient(135deg, rgba(255,255,255,.42) 0%, rgba(255,255,255,.10) 18%, rgba(255,255,255,0) 45%),
-              radial-gradient(900px 480px at 80% 70%, rgba(120,190,255,.10) 0%, rgba(120,190,255,0) 55%);
-            animation: glassShimmerDrift 8s ease-in-out infinite;
-        }
-        .glass__glow {
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            box-shadow:
-              inset 0 0 0 1px rgba(255,255,255,.12),
-              inset 0 -40px 80px rgba(0,0,0,.18),
-              inset 0 40px 80px rgba(255,255,255,.06);
-        }
-        .glass__water {
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            opacity: .22;
-            mix-blend-mode: screen;
-            filter: blur(.15px);
-            background:
-              radial-gradient(circle at 14% 22%, rgba(255,255,255,.55) 0 1.2px, rgba(255,255,255,.14) 1.4px 4.2px, rgba(255,255,255,0) 5.2px),
-              radial-gradient(circle at 22% 58%, rgba(255,255,255,.50) 0 1.1px, rgba(255,255,255,.13) 1.3px 4.0px, rgba(255,255,255,0) 5.0px),
-              radial-gradient(circle at 33% 36%, rgba(255,255,255,.52) 0 1.0px, rgba(255,255,255,.13) 1.2px 3.6px, rgba(255,255,255,0) 4.8px),
-              radial-gradient(circle at 41% 68%, rgba(255,255,255,.50) 0 1.4px, rgba(255,255,255,.14) 1.6px 4.8px, rgba(255,255,255,0) 6.0px),
-              radial-gradient(circle at 58% 30%, rgba(255,255,255,.58) 0 1.1px, rgba(255,255,255,.16) 1.3px 4.4px, rgba(255,255,255,0) 5.6px),
-              radial-gradient(circle at 66% 56%, rgba(255,255,255,.55) 0 1.0px, rgba(255,255,255,.15) 1.2px 4.0px, rgba(255,255,255,0) 5.0px),
-              radial-gradient(circle at 81% 44%, rgba(255,255,255,.55) 0 1.4px, rgba(255,255,255,.16) 1.6px 5.0px, rgba(255,255,255,0) 6.2px);
-        }
-
-        .center-vignette {
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(900px 500px at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,.18) 70%, rgba(0,0,0,.32) 100%);
-        }
-        .grain {
-            position: absolute;
-            inset: 0;
-            opacity: var(--login-grain-opacity);
-            mix-blend-mode: overlay;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.9'/%3E%3C/svg%3E");
-            background-size: 180px 180px;
-        }
-
-        [data-testid="stMainBlockContainer"] {
-            min-height: 100vh !important;
-            min-height: 100dvh !important;
+            animation: orbFloat 8s ease-in-out infinite;
+        }}
+        .orb-1 {{ width: 280px; height: 280px; background: {orb1}; bottom: -100px; left: -100px; animation-delay: 0s; }}
+        .orb-2 {{ width: 240px; height: 240px; background: {orb2}; top: -80px; right: -80px; animation-delay: -2s; }}
+        .orb-3 {{ width: 200px; height: 200px; background: {orb3}; top: 40%; left: 55%; opacity: 0.25; animation-delay: -4s; }}
+        
+        @keyframes orbFloat {{
+            0%, 100% {{ transform: translate(0, 0) scale(1); }}
+            25% {{ transform: translate(15px, -20px) scale(1.05); }}
+            50% {{ transform: translate(-10px, 15px) scale(0.95); }}
+            75% {{ transform: translate(20px, 10px) scale(1.02); }}
+        }}
+        
+        /* Center container - ULTRA COMPACT for 100% zoom NO SCROLL */
+        [data-testid="stMainBlockContainer"] {{
             display: flex !important;
             flex-direction: column !important;
             justify-content: center !important;
             align-items: center !important;
-            padding: 1rem !important;
-            position: relative !important;
-            z-index: 5 !important;
-            overflow: hidden !important;
+            height: 100vh !important;
             max-height: 100vh !important;
-            max-height: 100dvh !important;
-            gap: 0.35rem !important;
-        }
-        [data-testid="stVerticalBlock"] {
+            padding: 0.2rem !important;
+            position: relative;
+            z-index: 10;
+            overflow: hidden !important;
+        }}
+        [data-testid="stVerticalBlock"] {{
             width: 100% !important;
-            max-width: clamp(320px, 28vw, 420px) !important;
+            max-width: 340px !important;
+            display: flex !important;
+            flex-direction: column !important;
             align-items: center !important;
-            gap: 0.38rem !important;
-            max-height: calc(100vh - 1.1rem) !important;
-        }
-        [data-testid="stVerticalBlockBorderWrapper"] {
-            width: min(100%, clamp(320px, 28vw, 420px)) !important;
-            background: var(--login-card-bg) !important;
-            border: 1.5px solid var(--login-card-border) !important;
-            border-radius: 20px !important;
-            box-shadow: var(--login-card-shadow) !important;
-            backdrop-filter: blur(24px) saturate(160%) !important;
-            -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
-            padding: .78rem !important;
+            gap: 0.2rem !important;
+        }}
+        
+        /* Glass login card - ULTRA COMPACT */
+        [data-testid="stVerticalBlockBorderWrapper"] {{
+            background: rgba(255, 255, 255, 0.08) !important;
+            backdrop-filter: blur(24px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+            border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+            border-top-color: rgba(255, 255, 255, 0.4) !important;
+            border-left-color: rgba(255, 255, 255, 0.35) !important;
+            border-radius: 16px !important;
+            padding: 0.6rem !important;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                0 20px 60px rgba(0, 0, 0, 0.3),
+                inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
+            max-width: 340px !important;
+            margin: 0 auto !important;
             position: relative !important;
             overflow: hidden !important;
-        }
-        [data-testid="stVerticalBlockBorderWrapper"]::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(140deg, var(--login-card-highlight) 0%, rgba(255,255,255,0) 45%);
-            pointer-events: none;
-        }
-
-        .login-header {
+        }}
+        [data-testid="stVerticalBlockBorderWrapper"]::before {{
+            content: '' !important;
+            position: absolute !important;
+            top: 0 !important; left: 0 !important;
+            width: 100% !important; height: 100% !important;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 40%) !important;
+            pointer-events: none !important;
+            z-index: 1 !important;
+        }}
+        [data-testid="stVerticalBlockBorderWrapper"] > div {{ background: transparent !important; }}
+        
+        /* Login header - ULTRA COMPACT */
+        .login-header {{
             text-align: center;
-            margin-bottom: .35rem;
-            padding: .5rem .45rem;
+            margin-bottom: 0.3rem;
+            padding: 0.3rem;
+            background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.03));
+            backdrop-filter: blur(16px);
             border-radius: 12px;
-            border: 1px solid var(--login-card-border);
-            background: linear-gradient(145deg, rgba(255,255,255,.14), rgba(255,255,255,.02));
-        }
-        .dragon-logo-img {
-            max-width: 112px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
             width: 100%;
-            margin-bottom: .1rem;
-            filter: drop-shadow(0 0 26px rgba(67, 212, 255, .55));
-        }
-        .login-title {
-            margin: 0;
-            font-size: 1.05rem;
-            letter-spacing: .14em;
+        }}
+        .dragon-logo-img {{
+            max-width: 120px;
+            width: 100%;
+            margin-bottom: 0.1rem;
+            filter: drop-shadow(0 0 25px {orb1}80) drop-shadow(0 0 50px {orb2}40);
+            animation: logoGlow 3s ease-in-out infinite alternate;
+        }}
+        @keyframes logoGlow {{
+            0% {{ filter: drop-shadow(0 0 20px {orb1}60) drop-shadow(0 0 40px {orb2}30); }}
+            100% {{ filter: drop-shadow(0 0 35px {orb1}90) drop-shadow(0 0 60px {orb2}50); }}
+        }}
+        .login-title {{
+            font-size: 1rem;
             font-weight: 800;
-            background: linear-gradient(180deg, var(--login-title-grad-1) 0%, var(--login-title-grad-2) 52%, var(--login-title-grad-3) 100%);
+            letter-spacing: 2px;
+            background: linear-gradient(180deg, {orb1} 0%, {orb2} 50%, {orb3} 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-        }
-        .login-subtitle {
-            color: var(--login-text-muted);
-            font-size: .58rem;
-            letter-spacing: .1em;
+            margin: 0;
+        }}
+        .login-subtitle {{
+            color: rgba(255,255,255,0.7);
+            font-size: 0.55rem;
+            letter-spacing: 1px;
             text-transform: uppercase;
-        }
-
-        .stTextInput label, .stTextInput label p { color: var(--login-text) !important; font-size: .76rem !important; font-weight: 600 !important; }
-        .stTextInput > div > div > input {
-            background: var(--login-input-bg) !important;
-            border: 1.3px solid var(--login-input-border) !important;
-            border-radius: 10px !important;
-            color: var(--login-input-text) !important;
-            padding: .52rem .7rem !important;
-            font-size: .88rem !important;
-        }
-        .stTextInput > div > div > input:focus {
-            border-color: var(--login-focus-ring) !important;
-            box-shadow: 0 0 18px var(--login-focus-ring) !important;
-        }
-        .stTextInput > div > div > input::placeholder { color: var(--login-input-placeholder) !important; }
-        .stTextInput button svg { fill: var(--login-input-placeholder) !important; }
-
-        .stButton > button, .stFormSubmitButton > button {
-            background: linear-gradient(135deg, var(--login-button-start), var(--login-button-end)) !important;
-            border: 1px solid rgba(255,255,255,.32) !important;
-            border-radius: 10px !important;
-            color: var(--login-button-text) !important;
+        }}
+        
+        /* Form inputs - ULTRA COMPACT */
+        .stTextInput label, .stTextInput label p {{
+            color: #ffffff !important;
+            font-size: 0.7rem !important;
+            font-weight: 600 !important;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.4) !important;
+            margin-bottom: 0 !important;
+        }}
+        .stTextInput [data-baseweb="input"],
+        .stTextInput [data-baseweb="base-input"] {{
+            background: transparent !important;
+            border: none !important;
+        }}
+        .stTextInput > div > div > input {{
+            background: rgba(0, 0, 0, 0.3) !important;
+            backdrop-filter: blur(20px) !important;
+            border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+            border-top-color: rgba(255, 255, 255, 0.4) !important;
+            border-radius: 8px !important;
+            color: #ffffff !important;
+            padding: 0.4rem 0.6rem !important;
+            font-size: 0.85rem !important;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2) !important;
+        }}
+        .stTextInput > div > div > input:focus {{
+            border-color: {orb1} !important;
+            box-shadow: 0 0 15px {orb1}50, inset 0 2px 4px rgba(0,0,0,0.2) !important;
+        }}
+        .stTextInput > div > div > input::placeholder {{
+            color: rgba(255,255,255,0.5) !important;
+        }}
+        .stTextInput button {{ background: transparent !important; }}
+        .stTextInput button svg {{ fill: rgba(255,255,255,0.6) !important; }}
+        
+        /* Login button - ULTRA COMPACT */
+        .stButton > button, .stFormSubmitButton > button {{
+            background: linear-gradient(135deg, {orb1}cc, {orb2}aa) !important;
+            backdrop-filter: blur(12px) !important;
+            border: 1.5px solid rgba(255,255,255,0.3) !important;
+            border-radius: 8px !important;
+            color: #ffffff !important;
             font-weight: 700 !important;
-            font-size: .86rem !important;
-            padding: .52rem .9rem !important;
-            box-shadow: 0 8px 22px rgba(67,212,255,.28), 0 14px 32px rgba(124,83,255,.24) !important;
-        }
-
-        .stCaption, [data-testid="stCaption"] { color: var(--login-text-muted) !important; text-align: center !important; }
-        .stInfo { background: var(--login-alert-bg) !important; border-left: 3px solid var(--login-alert-border) !important; border-radius: 12px !important; }
-
-        .features-row {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: .35rem;
-            width: min(100%, clamp(320px, 28vw, 420px));
-            margin-top: .3rem;
-        }
-        .feature-glass {
-            background: rgba(255,255,255,.08);
-            border: 1px solid rgba(255,255,255,.2);
-            border-radius: 8px;
-            padding: .2rem .3rem;
-            text-align: center;
+            font-size: 0.8rem !important;
+            padding: 0.35rem 0.8rem !important;
+            box-shadow: 0 4px 20px {orb1}40 !important;
+            transition: all 0.3s ease !important;
+        }}
+        .stButton > button:hover, .stFormSubmitButton > button:hover {{
+            transform: translateY(-1px) !important;
+            box-shadow: 0 5px 20px {orb1}60 !important;
+        }}
+        
+        /* Feature tiles - INLINE ULTRA COMPACT */
+        .features-row {{
+            display: flex;
+            justify-content: center;
+            gap: 0.2rem;
+            margin-top: 0.2rem;
+            width: 100%;
+            max-width: 320px;
+        }}
+        .feature-glass {{
+            background: rgba(255, 255, 255, 0.06);
             backdrop-filter: blur(12px);
-        }
-        .feature-icon { font-size: .78rem; line-height: 1; }
-        .feature-text { color: var(--login-text-muted); font-size: .5rem; margin-top: .08rem; font-weight: 600; }
-        .version-text { color: var(--login-text-muted); font-size: .5rem; letter-spacing: .08em; text-align: center; margin-top: .22rem; }
-
-        @keyframes stageShinePulse {
-            0%, 100% { transform: scale(1); opacity: 0.64; }
-            50% { transform: scale(1.03); opacity: 0.82; }
-        }
-
-        @keyframes glassAuraPulse {
-            0%, 100% {
-                box-shadow:
-                  0 0 18px rgba(255,255,255,0.22),
-                  0 0 40px rgba(124,83,255,0.28),
-                  0 0 58px rgba(53,211,255,0.22);
-            }
-            50% {
-                box-shadow:
-                  0 0 26px rgba(255,255,255,0.34),
-                  0 0 52px rgba(124,83,255,0.38),
-                  0 0 72px rgba(53,211,255,0.3);
-            }
-        }
-
-        @keyframes glassShimmerDrift {
-            0%, 100% { transform: translateX(0px) translateY(0px); opacity: 0.5; }
-            50% { transform: translateX(12px) translateY(-8px); opacity: 0.7; }
-        }
-
-        @media (max-width: 980px) {
-            .glass { width: 68%; height: 74%; }
-            .glass.left { left: -27%; }
-            .glass.right { right: -27%; }
-            .features-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        }
-
-        @media (max-width: 640px) {
-            [data-testid="stVerticalBlockBorderWrapper"] { width: 100% !important; min-width: 0 !important; }
-            .glass { width: 78%; top: 14%; height: 70%; }
-            .glass.left { left: -33%; }
-            .glass.right { right: -33%; }
-            .grain { opacity: calc(var(--login-grain-opacity) * 0.7); }
-            .glass__water { opacity: .16; }
-        }
-
-        @media (max-height: 840px) {
-            .dragon-logo-img { max-width: 98px; }
-            .login-header { padding: .42rem .4rem; margin-bottom: .26rem; }
-            .features-row { margin-top: .18rem; gap: .24rem; }
-        }
-
-        @media (max-height: 740px) {
-            .version-text { display: none; }
-            .feature-text { font-size: .45rem; }
-            [data-testid="stVerticalBlockBorderWrapper"] { padding: .68rem !important; }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .glass::after,
-            .glass__shine,
-            .login-stage::before {
-                animation: none !important;
-            }
-        }
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 0.15rem 0.25rem;
+            text-align: center;
+            flex: 1;
+            transition: all 0.3s ease;
+        }}
+        .feature-glass:hover {{
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }}
+        .feature-icon {{ font-size: 0.75rem; }}
+        .feature-text {{ color: rgba(255,255,255,0.6); font-size: 0.45rem; font-weight: 500; margin-top: 0; }}
+        
+        .version-text {{ color: rgba(255,255,255,0.25); font-size: 0.45rem; text-align: center; margin-top: 0.15rem; letter-spacing: 1px; }}
+        
+        /* Caption styling */
+        .stCaption, [data-testid="stCaption"] {{
+            color: rgba(255,255,255,0.5) !important;
+            font-size: 0.75rem !important;
+            text-align: center !important;
+        }}
+        
+        /* Info box */
+        .stInfo {{ 
+            background: rgba(0,0,0,0.3) !important;
+            backdrop-filter: blur(12px) !important;
+            border-radius: 12px !important;
+            border-left: 3px solid {orb1} !important;
+        }}
     </style>
-"""
-    )
-
-    stage_markup = """
-    <svg width="0" height="0" style="position:fixed;left:-9999px;top:-9999px;pointer-events:none;">
-      <filter id="liquid" x="-20%" y="-20%" width="140%" height="140%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="8" result="noise"></feTurbulence>
-        <feGaussianBlur in="noise" stdDeviation="1.2" result="softNoise"></feGaussianBlur>
-        <feDisplacementMap in="SourceGraphic" in2="softNoise" scale="18" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
-      </filter>
-    </svg>
-    <div class="login-stage">
-      <div class="blob b1"></div>
-      <div class="blob b2"></div>
-      <div class="blob b3"></div>
-      <div class="blob b4"></div>
-      <section class="glass left">
-        <div class="glass__surface"></div>
-        <div class="glass__shine"></div>
-        <div class="glass__glow"></div>
-        <div class="glass__water"></div>
-      </section>
-      <section class="glass right">
-        <div class="glass__surface"></div>
-        <div class="glass__shine"></div>
-        <div class="glass__glow"></div>
-        <div class="glass__water"></div>
-      </section>
-      <div class="center-vignette"></div>
-      <div class="grain"></div>
-    </div>
-"""
-    st.markdown(css + stage_markup, unsafe_allow_html=True)
-
+    
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    """, unsafe_allow_html=True)
+    
+    # Glass login card
     with st.container(border=True):
+        # Load logo
         logo_html = ""
         if LOGO_PATH.exists():
             with open(LOGO_PATH, "rb") as f:
-                logo_b64 = base64.b64encode(f.read()).decode("ascii")
+                logo_b64 = base64.b64encode(f.read()).decode()
             logo_html = f'<img src="data:image/png;base64,{logo_b64}" class="dragon-logo-img" alt="Dragon Mailer">'
-
-        st.markdown(
-            f"""
+        
+        st.markdown(f"""
         <div class="login-header">
             {logo_html if logo_html else '<div style="font-size:2.5rem;margin-bottom:0.2rem;">🐉</div>'}
             <div class="login-title">DRAGON MAILER</div>
-            <div class="login-subtitle">Professional Email and SMS Platform</div>
+            <div class="login-subtitle">Professional Email & SMS Platform</div>
         </div>
-        """,
-            unsafe_allow_html=True,
-        )
-
+        """, unsafe_allow_html=True)
+        
+        # Login form
         with st.form("login_form", clear_on_submit=False):
             username = st.text_input("👤 Username", placeholder="Enter username")
             password = st.text_input("🔒 Password", type="password", placeholder="Enter password")
-
+            
             if st.form_submit_button("🔓 Sign In", use_container_width=True):
                 user = authenticate_user(username, password)
                 if user:
                     st.session_state.authenticated = True
-                    st.session_state.current_user = user["username"]
-                    st.session_state.user_role = user["role"]
-                    play_sound("login")
+                    st.session_state.current_user = user['username']
+                    st.session_state.user_role = user['role']
+                    play_sound('login')
                     st.success("✅ Login successful!")
                     st.rerun()
                 else:
-                    play_sound("error")
+                    play_sound('error')
                     st.error("❌ Invalid username or password")
-
+        
         st.caption("🔐 Secure enterprise messaging platform")
-
-    st.markdown(
-        """
+    
+    # Feature tiles
+    st.markdown(f"""
     <div class="features-row">
         <div class="feature-glass"><div class="feature-icon">📧</div><div class="feature-text">Email</div></div>
         <div class="feature-glass"><div class="feature-icon">📱</div><div class="feature-text">SMS</div></div>
@@ -2349,10 +1848,7 @@ def login_page():
         <div class="feature-glass"><div class="feature-icon">🔒</div><div class="feature-text">Secure</div></div>
     </div>
     <div class="version-text">Dragon Mailer v2.0 Glass Edition</div>
-    """,
-        unsafe_allow_html=True,
-    )
-    return
+    """, unsafe_allow_html=True)
 
 # =============================================================================
 # SMTP CONFIGURATION UI
@@ -2474,21 +1970,6 @@ def email_composer_ui():
         custom_link = st.text_input("🔗 Custom Link", placeholder="https://...", help="Replaces {link} in template")
     
     template = EMAIL_TEMPLATES.get(template_name, {"subject": "", "body": ""})
-
-    # Keep draft state stable across reruns/toggles while still allowing template apply.
-    if "email_template_applied" not in st.session_state:
-        st.session_state["email_template_applied"] = template_name
-    if "email_draft_subject" not in st.session_state:
-        st.session_state["email_draft_subject"] = template.get("subject", "")
-    if "email_draft_body" not in st.session_state:
-        st.session_state["email_draft_body"] = template.get("body", "")
-    if "email_content_type" not in st.session_state:
-        st.session_state["email_content_type"] = "Plain Text"
-
-    if st.session_state.get("email_template_applied") != template_name:
-        st.session_state["email_draft_subject"] = template.get("subject", "")
-        st.session_state["email_draft_body"] = template.get("body", "")
-        st.session_state["email_template_applied"] = template_name
     
     # Recipient mode
     mode = st.radio("Recipient Mode", ["Single Email", "Bulk Email (Multiple Recipients)"], horizontal=True)
@@ -2506,51 +1987,29 @@ def email_composer_ui():
         if recipients:
             st.info(f"📊 {len(recipients)} recipients detected")
     
-    subject = st.text_input(
-        "📝 Subject",
-        key="email_draft_subject",
-        placeholder="Enter email subject"
-    )
-
+    subject = st.text_input("📝 Subject", value=template.get("subject", ""), placeholder="Enter email subject")
+    
     # Content type toggle
-    content_type = st.radio(
-        "Content Type",
-        ["Plain Text", "HTML"],
-        horizontal=True,
-        key="email_content_type"
-    )
+    content_type = st.radio("Content Type", ["Plain Text", "HTML"], horizontal=True)
     is_html = content_type == "HTML"
-
-    # Draft controls
-    draft_col1, draft_col2 = st.columns(2)
-    with draft_col1:
-        if st.button("♻️ Reapply Template", use_container_width=True):
-            st.session_state["email_draft_subject"] = template.get("subject", "")
-            st.session_state["email_draft_body"] = template.get("body", "")
-            st.rerun()
-    with draft_col2:
-        if st.button("🧹 Clear Draft", use_container_width=True):
-            st.session_state["email_draft_subject"] = ""
-            st.session_state["email_draft_body"] = ""
-            st.rerun()
-
-    body_label = "📄 HTML Body" if is_html else "📄 Message Body"
-    body_placeholder = (
-        "<h1>Hello!</h1>\n<p>This is a <strong>beautiful</strong> email.</p>"
-        if is_html else
-        "Enter your message here..."
-    )
-    body = st.text_area(
-        body_label,
-        key="email_draft_body",
-        placeholder=body_placeholder,
-        height=250
-    )
-
+    
     if is_html:
+        body = st.text_area(
+            "📄 HTML Body",
+            value=template.get("body", ""),
+            placeholder="<h1>Hello!</h1>\n<p>This is a <strong>beautiful</strong> email.</p>",
+            height=250
+        )
         with st.expander("👁️ Preview HTML"):
             preview_body = apply_patterns(body, custom_link)
             st.markdown(preview_body, unsafe_allow_html=True)
+    else:
+        body = st.text_area(
+            "📄 Message Body",
+            value=template.get("body", ""),
+            placeholder="Enter your message here...",
+            height=250
+        )
     
     # Pattern variables help
     with st.expander("💡 Pattern Variables Help"):
@@ -2610,16 +2069,26 @@ def email_composer_ui():
     
     if send_btn:
         if not recipients:
-            show_themed_notification("Please enter recipient(s)", "error")
+            if JELLY_AVAILABLE:
+                jelly_notification("Please enter recipient(s)", "error")
+            else:
+                st.error("❌ Please enter recipient(s)")
         elif not subject:
-            show_themed_notification("Please enter a subject", "error")
+            if JELLY_AVAILABLE:
+                jelly_notification("Please enter a subject", "error")
+            else:
+                st.error("❌ Please enter a subject")
         elif not body:
-            show_themed_notification("Please enter a message body", "error")
+            if JELLY_AVAILABLE:
+                jelly_notification("Please enter a message body", "error")
+            else:
+                st.error("❌ Please enter a message body")
         else:
-            # Show themed loading
-            loading_placeholder = st.empty()
-            with loading_placeholder:
-                show_themed_loading("Sending emails...")
+            # Show jelly loading
+            if JELLY_AVAILABLE:
+                loading_placeholder = st.empty()
+                with loading_placeholder:
+                    jelly_loading("Sending emails...")
             
             with st.spinner("📤 Sending..."):
                 # Apply patterns to subject and body
@@ -2629,7 +2098,8 @@ def email_composer_ui():
                 # Add tracking pixel if enabled (HTML only)
                 tracking_id = None
                 if enable_tracking and is_html:
-                    tracking_id = str(uuid.uuid4())[:8]
+                    import uuid as uuid_module
+                    tracking_id = str(uuid_module.uuid4())[:8]
                     if tracking_service == "Custom URL" and custom_tracking_url:
                         pixel_url = custom_tracking_url.replace("{uuid}", tracking_id)
                     else:
@@ -2655,12 +2125,19 @@ def email_composer_ui():
                         reply_to if reply_to else None
                     )
                     
-                    loading_placeholder.empty()
+                    if JELLY_AVAILABLE:
+                        loading_placeholder.empty()
                     
                     if result['success']:
-                        show_themed_notification(result['message'], "success")
+                        if JELLY_AVAILABLE:
+                            jelly_notification(result['message'], "success")
+                        else:
+                            st.success(f"✅ {result['message']}")
                     else:
-                        show_themed_notification(result['message'], "error")
+                        if JELLY_AVAILABLE:
+                            jelly_notification(result['message'], "error")
+                        else:
+                            st.error(f"❌ {result['message']}")
                 else:
                     progress_bar = st.progress(0)
                     results = send_bulk_emails(
@@ -2674,12 +2151,14 @@ def email_composer_ui():
                         reply_to=reply_to if reply_to else None
                     )
                     
-                    loading_placeholder.empty()
-                    show_themed_notification(
-                        f"Sent: {results['success']} | Failed: {results['failed']}",
-                        "success" if results['failed'] == 0 else "warning"
-                    )
-                    show_themed_progress(results['success'] / len(recipients), "Send Progress", "#22c55e")
+                    if JELLY_AVAILABLE:
+                        loading_placeholder.empty()
+                        jelly_notification(f"Sent: {results['success']} | Failed: {results['failed']}", 
+                                          "success" if results['failed'] == 0 else "warning")
+                        # Show jelly progress bar for results
+                        jelly_progress(results['success'] / len(recipients), "Send Progress", "#22c55e")
+                    else:
+                        st.success(f"✅ Sent: {results['success']} | ❌ Failed: {results['failed']}")
                     
                     # Play sound based on results
                     if results['failed'] == 0:
@@ -2880,16 +2359,20 @@ def sms_composer_ui():
                         success_count += 1
                     else:
                         fail_count += 1
-                        show_themed_notification(f"{recipient['phone']}: {result['message']}", "warning")
+                        if JELLY_AVAILABLE:
+                            jelly_notification(f"{recipient['phone']}: {result['message']}", "warning")
+                        else:
+                            st.warning(f"⚠️ {recipient['phone']}: {result['message']}")
                     
                     progress_bar.progress((i + 1) / len(recipients))
                 
-                # Show results with active theme
-                show_themed_notification(
-                    f"Sent: {success_count} | Failed: {fail_count}",
-                    "success" if fail_count == 0 else "warning"
-                )
-                show_themed_progress(success_count / len(recipients), "SMS Send Progress", "#22c55e")
+                # Show results with jelly
+                if JELLY_AVAILABLE:
+                    jelly_notification(f"Sent: {success_count} | Failed: {fail_count}", 
+                                      "success" if fail_count == 0 else "warning")
+                    jelly_progress(success_count / len(recipients), "SMS Send Progress", "#22c55e")
+                else:
+                    st.success(f"✅ Sent: {success_count} | ❌ Failed: {fail_count}")
                 
                 # Play sound based on results
                 if fail_count == 0:
@@ -2917,7 +2400,7 @@ def sms_composer_ui():
 # =============================================================================
 
 def dashboard_ui():
-    """Dashboard with statistics using active UI theme components."""
+    """Dashboard with statistics - Enhanced with organic Jelly blob components"""
     st.subheader("📊 Dashboard")
     
     sent_log = load_json(SENT_MESSAGES_FILE, {"messages": []})
@@ -2933,39 +2416,36 @@ def dashboard_ui():
     success_rate = (total_success / total_all * 100) if total_all > 0 else 0
     bounce_rate = (total_failed / total_all * 100) if total_all > 0 else 0
     
-    components = get_dashboard_components()
-    visuals = get_ui_theme_visuals()
-
-    if components:
+    # Use organic Jelly blob components if available
+    if JELLY_AVAILABLE:
         # Row 1: Campaign Overview + Theme Intensity
         col1, col2 = st.columns(2)
         with col1:
-            components["blob_metric"]("Campaign Overview", f"{total_all:,}", "messages sent this month")
+            jelly_blob_metric("Campaign Overview", f"{total_all:,}", "messages sent this month")
         with col2:
-            components["blob_intensity"]("Theme Intensity")
+            jelly_blob_intensity("Theme Intensity")
         
         # Row 2: Volume + Email Send Rate
         col1, col2 = st.columns(2)
         with col1:
-            components["blob_volume"]("Volume")
+            jelly_blob_volume("Volume")
         with col2:
-            progress_color = visuals["progress_scheme"]
-            components["blob_progress"](success_rate / 100, "Email Send Rate", progress_color)
+            jelly_blob_progress(success_rate / 100, "Email Send Rate", "blue_orange")
         
         # Row 3: Bounce Rate x2
         col1, col2 = st.columns(2)
         with col1:
-            components["blob_bounce"](bounce_rate / 100, "Bounce Rate")
+            jelly_blob_bounce(bounce_rate / 100, "Bounce Rate")
         with col2:
-            components["blob_bounce"](total_failed / max(total_all, 1), "Failure Rate")
+            jelly_blob_bounce(total_failed / max(total_all, 1), "Failure Rate")
         
         # Stats card
-        components["stats_card"]("📊 Campaign Overview", [
+        jelly_stats_card("📊 Campaign Overview", [
             {"label": "Total Sent", "value": str(total_all)},
             {"label": "Emails", "value": str(total_emails)},
             {"label": "Gateway SMS", "value": str(total_sms - total_azure)},
             {"label": "Azure SMS", "value": str(total_azure)},
-        ], visuals["accent"])
+        ], "#00d4ff")
     else:
         # Fallback to standard metrics
         col1, col2, col3, col4 = st.columns(4)
@@ -2986,14 +2466,14 @@ def dashboard_ui():
             timestamp = msg.get('timestamp', 'Unknown')[:16].replace('T', ' ')
             msg_text = f"{icon} {msg.get('subject', 'SMS')} - {timestamp} | ✅ {msg.get('success', 0)} | ❌ {msg.get('failed', 0)}"
             
-            if components:
+            if JELLY_AVAILABLE:
                 notif_type = "success" if msg.get('failed', 0) == 0 else "warning" if msg.get('success', 0) > 0 else "error"
-                show_themed_notification(msg_text, notif_type)
+                jelly_notification(msg_text, notif_type)
             else:
                 st.write(msg_text)
     else:
-        if components:
-            show_themed_notification("No messages sent yet - Start sending to see activity here!", "info")
+        if JELLY_AVAILABLE:
+            jelly_notification("No messages sent yet - Start sending to see activity here!", "info")
         else:
             st.info("No messages sent yet")
 
@@ -3005,107 +2485,83 @@ def settings_ui():
     """Settings and theme customization"""
     st.subheader("⚙️ Settings & Themes")
     
-    col1, col2, col3 = st.columns(3)
-
+    col1, col2 = st.columns(2)
+    
     with col1:
-        st.markdown("### 🎨 Interface Theme")
-        if st.session_state.get("settings_ui_theme") != st.session_state.ui_theme:
-            st.session_state["settings_ui_theme"] = st.session_state.ui_theme
-        new_ui_theme = st.selectbox(
-            "Select Interface Theme",
-            options=UI_THEME_OPTIONS,
-            key="settings_ui_theme"
-        )
-        if set_active_ui_theme(new_ui_theme):
-            st.session_state["sidebar_ui_theme"] = st.session_state.ui_theme
-            st.rerun()
-
-    with col2:
-        st.markdown("### 💎 Liquid Glass Palette")
-        glass_options = list(GLASS_THEMES.keys())
-        current_glass = st.session_state.theme if st.session_state.theme in GLASS_THEMES else glass_options[0]
+        st.markdown("### 🎨 Glass Theme")
         new_theme = st.selectbox(
-            "Select Glass Palette",
-            options=glass_options,
-            index=glass_options.index(current_glass)
+            "Select Glass Theme",
+            options=list(GLASS_THEMES.keys()),
+            index=list(GLASS_THEMES.keys()).index(st.session_state.theme)
         )
         if new_theme != st.session_state.theme:
             st.session_state.theme = new_theme
             st.rerun()
-
-    with col3:
+    
+    with col2:
         st.markdown("### 🖼️ Nature Background")
-        bg_options = list(NATURE_BACKGROUNDS.keys())
-        current_bg = st.session_state.background if st.session_state.background in NATURE_BACKGROUNDS else bg_options[0]
         new_bg = st.selectbox(
             "Select Background",
-            options=bg_options,
-            index=bg_options.index(current_bg)
+            options=list(NATURE_BACKGROUNDS.keys()),
+            index=list(NATURE_BACKGROUNDS.keys()).index(st.session_state.background)
         )
         if new_bg != st.session_state.background:
             st.session_state.background = new_bg
             st.rerun()
-
-    st.markdown("### 💧 Water Refraction")
-    water_depth = st.slider(
-        "Refraction Depth",
-        min_value=0.0,
-        max_value=1.0,
-        value=float(st.session_state.water_refraction_depth),
-        step=0.05,
-        help="Controls glass refraction, caustic highlights, and liquid depth across the interface."
-    )
-    if abs(water_depth - st.session_state.water_refraction_depth) > 1e-9:
-        st.session_state.water_refraction_depth = water_depth
-        save_refraction_depth(water_depth)
-        st.rerun()
     
     # Theme preview
     st.markdown("### 👁️ Current Theme Preview")
-    active_ui_theme = get_active_ui_theme()
-    if active_ui_theme == "Dark":
-        st.markdown("""
-        <div style="
-            background: linear-gradient(145deg, #0f172a, #1e293b);
-            border-radius: 14px;
-            border: 1px solid rgba(148, 163, 184, 0.25);
-            box-shadow: 0 12px 28px rgba(2, 6, 23, 0.45);
-            padding: 16px;
-            color: #e2e8f0;">
-            <h4 style="margin:0 0 8px 0;color:#f8fafc;">Dark Interface Preview</h4>
-            <p style="margin:0;color:#cbd5e1;">Low-glare panels with stronger contrast and cool accents.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    elif active_ui_theme == "Light":
-        st.markdown("""
-        <div style="
-            background: linear-gradient(145deg, #ffffff, #f0f9ff);
-            border-radius: 14px;
-            border: 1px solid rgba(14, 165, 233, 0.3);
-            box-shadow: 0 12px 28px rgba(14, 165, 233, 0.12);
-            padding: 16px;
-            color: #0f172a;">
-            <h4 style="margin:0 0 8px 0;color:#0f172a;">Light Interface Preview</h4>
-            <p style="margin:0;color:#1e293b;">Brighter surfaces with clean text and soft cyan highlights.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        theme_data = GLASS_THEMES[st.session_state.theme]
-        st.markdown(f"""
-        <div class="glass-card">
-            <h4>Liquid Glass Preview</h4>
-            <p>This is how your content will look with the current glass palette.</p>
-            <button style="background:{theme_data['accent']};color:white;border:none;padding:10px 20px;border-radius:8px;">
-                Sample Button
-            </button>
-        </div>
-        """, unsafe_allow_html=True)
+    theme_data = GLASS_THEMES[st.session_state.theme]
+    st.markdown(f"""
+    <div class="glass-card">
+        <h4>Preview Card</h4>
+        <p>This is how your content will look with the current theme.</p>
+        <button style="background:{theme_data['accent']};color:white;border:none;padding:10px 20px;border-radius:8px;">
+            Sample Button
+        </button>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Admin activity log
+    # User management (admin only)
     if st.session_state.user_role == 'admin':
         st.markdown("---")
-        st.subheader("📊 Activity Log")
-        st.caption("View recent messaging activity")
+        st.subheader("👥 User Management")
+        
+        with st.expander("➕ Add New User"):
+            new_username = st.text_input("Username", key="new_user")
+            new_password = st.text_input("Password", type="password", key="new_pass")
+            new_role = st.selectbox("Role", ["user", "admin"], key="new_role")
+            
+            if st.button("Create User"):
+                if new_username and new_password:
+                    users = load_json(USERS_FILE, {"users": []})
+                    # Check if user already exists
+                    existing = [u for u in users.get('users', []) if u['username'] == new_username]
+                    if existing:
+                        st.error(f"❌ User '{new_username}' already exists!")
+                    else:
+                        users['users'].append({
+                            "username": new_username,
+                            "password_hash": hash_password(new_password),
+                            "role": new_role,
+                            "created": datetime.now().isoformat()
+                        })
+                        save_json(USERS_FILE, users)
+                        # Create empty SMTP config file for the new user (clean slate)
+                        if new_role != 'admin':
+                            user_config_file = get_user_smtp_config_file(new_username)
+                            save_json(user_config_file, {"configs": []})
+                        st.success(f"✅ User '{new_username}' created with clean slate!")
+        
+        # List users
+        users = load_json(USERS_FILE, {"users": []})
+        for user in users.get('users', []):
+            st.write(f"👤 **{user['username']}** ({user['role']})")
+        
+        # Admin Activity Log - All User Sent Messages
+        st.markdown("---")
+        st.subheader("📊 All User Activity Log")
+        st.caption("View all messages sent by all users")
         
         sent_log = load_json(SENT_MESSAGES_FILE, {"messages": []})
         messages = sent_log.get('messages', [])
@@ -3274,23 +2730,34 @@ def azure_sms_ui():
     
     if st.button("📤 Send via Azure", use_container_width=True, type="primary"):
         if not to_number:
-            show_themed_notification("Please enter recipient phone number", "error")
+            if JELLY_AVAILABLE:
+                jelly_notification("Please enter recipient phone number", "error")
+            else:
+                st.error("❌ Please enter recipient phone number")
         elif not message:
-            show_themed_notification("Please enter a message", "error")
+            if JELLY_AVAILABLE:
+                jelly_notification("Please enter a message", "error")
+            else:
+                st.error("❌ Please enter a message")
         else:
-            # Show themed loading
-            loading_placeholder = st.empty()
-            with loading_placeholder:
-                show_themed_loading("Sending via Azure...")
+            # Show jelly loading
+            if JELLY_AVAILABLE:
+                loading_placeholder = st.empty()
+                with loading_placeholder:
+                    jelly_loading("Sending via Azure...")
             
             with st.spinner("📤 Sending via Azure..."):
                 final_message = apply_patterns(message, custom_link)
                 success, result_msg = send_sms_via_azure(to_number, final_message)
                 
-                loading_placeholder.empty()
+                if JELLY_AVAILABLE:
+                    loading_placeholder.empty()
                 
                 if success:
-                    show_themed_notification(result_msg, "success")
+                    if JELLY_AVAILABLE:
+                        jelly_notification(result_msg, "success")
+                    else:
+                        st.success(f"✅ {result_msg}")
                     # Log the message
                     sent_log = load_json(SENT_MESSAGES_FILE, {"messages": []})
                     sent_log['messages'].append({
@@ -3307,7 +2774,10 @@ def azure_sms_ui():
                     })
                     save_json(SENT_MESSAGES_FILE, sent_log)
                 else:
-                    show_themed_notification(result_msg, "error")
+                    if JELLY_AVAILABLE:
+                        jelly_notification(result_msg, "error")
+                    else:
+                        st.error(f"❌ {result_msg}")
 
 # =============================================================================
 # SCHEDULED TASKS UI
@@ -3442,7 +2912,7 @@ def jelly_dashboard_ui():
             st.info("Falling back to standard dashboard...")
             dashboard_ui()
     else:
-        st.warning("⚠️ Theme components not available")
+        st.warning("⚠️ Jelly components not available")
         st.info("Using standard dashboard instead...")
         dashboard_ui()
 
@@ -3450,99 +2920,76 @@ def jelly_dashboard_ui():
 # MAIN APPLICATION
 # =============================================================================
 
-def render_sidebar_visibility_toggle():
-    """Render sidebar toggle and apply deterministic sidebar visibility styles."""
-    if "sidebar_visible" not in st.session_state:
-        st.session_state["sidebar_visible"] = True
-
-    # Keep toggle control pinned to the viewport so it remains reachable.
-    st.markdown("""
-    <style>
-    div.st-key-sidebar_visible {
-        position: fixed;
-        top: 0.85rem;
-        left: 0.85rem;
-        z-index: 10000;
-        width: auto !important;
-    }
-    div.st-key-sidebar_visible > div {
-        margin: 0 !important;
-    }
-    div.st-key-sidebar_visible label {
-        border-radius: 10px !important;
-        border: 1px solid rgba(14, 165, 233, 0.45) !important;
-        padding: 0.35rem 0.65rem !important;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24) !important;
-        backdrop-filter: blur(8px) !important;
-        background: rgba(8, 25, 40, 0.55) !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    sidebar_visible = st.toggle(
-        "Sidebar",
-        key="sidebar_visible",
-        help="Show or hide the left sidebar"
-    )
-
-    sidebar_width = "21rem" if sidebar_visible else "0rem"
-    sidebar_transform = "translateX(0)" if sidebar_visible else "translateX(-105%)"
-    sidebar_visibility = "visible" if sidebar_visible else "hidden"
-    sidebar_pointer_events = "auto" if sidebar_visible else "none"
-    sidebar_opacity = "1" if sidebar_visible else "0"
-
-    st.markdown(f"""
-    <style>
-    section[data-testid="stSidebar"] {{
-        min-width: {sidebar_width} !important;
-        max-width: {sidebar_width} !important;
-        width: {sidebar_width} !important;
-        transform: {sidebar_transform} !important;
-        visibility: {sidebar_visibility} !important;
-        pointer-events: {sidebar_pointer_events} !important;
-        opacity: {sidebar_opacity} !important;
-        overflow: hidden !important;
-        transition:
-            transform 0.2s ease-in-out,
-            min-width 0.2s ease-in-out,
-            max-width 0.2s ease-in-out,
-            opacity 0.2s ease-in-out !important;
-    }}
-    [data-testid="stSidebarContent"] {{
-        opacity: {sidebar_opacity} !important;
-        transition: opacity 0.15s ease-in-out !important;
-    }}
-    div[data-testid="stSidebarCollapsedControl"] {{
-        display: none !important;
-    }}
-    </style>
-    """, unsafe_allow_html=True)
-
 def main():
     """Main application entry point"""
     # Initialize
     init_session_state()
-    normalize_ui_theme_state()
-    normalize_visual_preferences()
     create_default_admin()
     
     # Inject sound system
     inject_sound_system()
     
+    # Inject CSS with current theme
+    inject_neumorphic_glass_css(
+        NATURE_BACKGROUNDS[st.session_state.background],
+        st.session_state.theme
+    )
+    
     # Check authentication
     if not st.session_state.authenticated:
         login_page()
         return
-
-    # Apply base glass style, then optional UI-mode overrides.
-    inject_neumorphic_glass_css(
-        NATURE_BACKGROUNDS[st.session_state.background],
-        st.session_state.theme,
-        st.session_state.water_refraction_depth
-    )
-    inject_ui_theme_overrides(get_active_ui_theme())
     
-    render_sidebar_visibility_toggle()
+    # Inject sidebar always visible + toggle button CSS
+    st.markdown("""
+    <style>
+    /* SIDEBAR ALWAYS VISIBLE */
+    [data-testid="stSidebar"] {
+        transform: translateX(0) !important;
+        visibility: visible !important;
+        min-width: 280px !important;
+    }
+    [data-testid="stSidebar"][aria-expanded="false"] {
+        transform: translateX(0) !important;
+        visibility: visible !important;
+        min-width: 280px !important;
+    }
+    [data-testid="stSidebarCollapsedControl"] {
+        display: none !important;
+    }
+    
+    /* Sidebar toggle button - always visible */
+    [data-testid="collapsedControl"] {
+        display: flex !important;
+        position: fixed !important;
+        left: 10px !important;
+        top: 10px !important;
+        z-index: 999999 !important;
+        background: rgba(0, 212, 255, 0.2) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(0, 212, 255, 0.4) !important;
+        border-radius: 10px !important;
+        padding: 8px !important;
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.3) !important;
+        animation: sidebarBtnGlow 2s ease-in-out infinite !important;
+    }
+    
+    @keyframes sidebarBtnGlow {
+        0%, 100% { box-shadow: 0 0 15px rgba(0, 212, 255, 0.3); }
+        50% { box-shadow: 0 0 25px rgba(0, 212, 255, 0.6); }
+    }
+    
+    [data-testid="collapsedControl"]:hover {
+        background: rgba(0, 212, 255, 0.4) !important;
+        transform: scale(1.1) !important;
+    }
+    
+    [data-testid="collapsedControl"] svg {
+        fill: #00d4ff !important;
+        stroke: #00d4ff !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     
     # Sidebar
     with st.sidebar:
@@ -3551,37 +2998,30 @@ def main():
         else:
             st.warning("⚠️ Add logo to images/dragon_logo.png")
         
-        show_themed_notification(
-            f"👤 {st.session_state.current_user} ({st.session_state.user_role})",
-            "info"
-        )
+        # User info with jelly styling
+        if JELLY_AVAILABLE:
+            jelly_notification(f"👤 {st.session_state.current_user} ({st.session_state.user_role})", "info")
+        else:
+            st.write(f"👤 **{st.session_state.current_user}** ({st.session_state.user_role})")
         
         if st.session_state.current_smtp:
-            show_themed_notification(
-                f"📧 {st.session_state.current_smtp['name']}",
-                "success"
-            )
+            if JELLY_AVAILABLE:
+                jelly_notification(f"📧 {st.session_state.current_smtp['name']}", "success")
+            else:
+                st.success(f"📧 {st.session_state.current_smtp['name']}")
         else:
-            show_themed_notification("⚠️ No SMTP selected", "warning")
+            if JELLY_AVAILABLE:
+                jelly_notification("⚠️ No SMTP selected", "warning")
+            else:
+                st.warning("⚠️ No SMTP selected")
         
         st.markdown("---")
         
-        # Quick theme switchers
+        # Quick theme switcher
         st.markdown("### 🎨 Quick Theme")
-        if st.session_state.get("sidebar_ui_theme") != st.session_state.ui_theme:
-            st.session_state["sidebar_ui_theme"] = st.session_state.ui_theme
-        quick_ui_theme = st.selectbox(
-            "Interface Theme",
-            UI_THEME_OPTIONS,
-            key="sidebar_ui_theme"
-        )
-        if set_active_ui_theme(quick_ui_theme):
-            st.session_state["settings_ui_theme"] = st.session_state.ui_theme
-            st.rerun()
-
-        if st.session_state.get("sidebar_bg") != st.session_state.background:
-            st.session_state["sidebar_bg"] = st.session_state.background
-        quick_bg = st.selectbox("Background", list(NATURE_BACKGROUNDS.keys()), key="sidebar_bg")
+        quick_bg = st.selectbox("Background", list(NATURE_BACKGROUNDS.keys()), 
+                                index=list(NATURE_BACKGROUNDS.keys()).index(st.session_state.background),
+                                key="sidebar_bg", label_visibility="collapsed")
         if quick_bg != st.session_state.background:
             st.session_state.background = quick_bg
             st.rerun()
@@ -3685,7 +3125,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
